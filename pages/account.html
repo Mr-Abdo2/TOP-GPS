@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — حسابي</title>
+  <meta name="description" content="صفحة إعدادات الحساب الشخصي — بيانات الاتصال وكلمة المرور والاستخدام">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* ===== Account Page Specific Styles ===== */
+    .account-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 4px;
+    }
+
+    /* Tabs Bar */
+    .account-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 28px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+    }
+    .account-tab {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      user-select: none;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: 'Cairo', sans-serif;
+    }
+    .account-tab:hover { color: var(--accent); }
+    .account-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Tab Content */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Section headers */
+    .section-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0 0 18px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--accent-glow);
+    }
+
+    /* Form rows */
+    .acct-row {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .acct-row:last-child { border-bottom: none; }
+    .acct-label {
+      width: 200px;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 8px 0;
+    }
+    .acct-label.required::after {
+      content: ' *';
+      color: var(--red);
+    }
+    .acct-input {
+      flex: 1;
+      padding: 7px 12px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: 'Cairo', sans-serif;
+      max-width: 420px;
+    }
+    .acct-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .acct-input.readonly {
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+      cursor: default;
+    }
+    .acct-input[type="password"] {
+      direction: ltr;
+      text-align: right;
+    }
+
+    /* Cards for sections */
+    .acct-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Usage stats */
+    .usage-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .usage-row:last-child { border-bottom: none; }
+    .usage-label {
+      width: 240px;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .usage-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      direction: ltr;
+      min-width: 100px;
+    }
+    .usage-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 200px;
+    }
+    .usage-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      transition: width 0.5s ease;
+    }
+    .usage-bar.danger { background: linear-gradient(90deg, var(--yellow), var(--red)); }
+
+    /* Notification switches */
+    .notif-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .notif-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border);
+      border-radius: 24px;
+      transition: 0.3s;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+    /* Action buttons */
+    .acct-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 20px;
+    }
+
+    /* Password strength */
+    .pwd-strength {
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 6px;
+      transition: all 0.3s;
+      max-width: 420px;
+    }
+
+    /* Avatar area */
+    .avatar-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 16px 0 20px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .big-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .big-avatar:hover { transform: scale(1.05); }
+    .avatar-info h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .avatar-info span { font-size: 12px; color: var(--text-muted); }
+    .avatar-info .role-badge {
+      display: inline-block;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 20px;
+      padding: 2px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* Toast fixed */
+    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 8px; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .acct-label { width: 120px; font-size: 12px; }
+      .usage-label { width: 150px; font-size: 12px; }
+      .account-tab { padding: 8px 12px; font-size: 12px; }
+    }
+
+    /* Session card */
+    .session-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: var(--bg-secondary);
+    }
+    .session-icon { font-size: 24px; }
+    .session-info { flex: 1; }
+    .session-info .s-device { font-size: 13px; font-weight: 600; }
+    .session-info .s-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .session-current { font-size: 11px; color: var(--green); background: var(--green-glow); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <header class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title">👤 حسابي</div>
+        <div class="topbar-subtitle">إعدادات الحساب الشخصي ومعلومات الاتصال</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" id="save-btn" onclick="saveAllSettings()">💾 حفظ التغييرات</button>
+        <button class="btn btn-secondary" onclick="resetForm()">↩️ إعادة تعيين</button>
+      </div>
+    </header>
+
+    <div class="page-content" id="page-content" style="overflow-y:auto;">
+      <div class="account-container">
+
+        <!-- Tabs -->
+        <div class="account-tabs" id="account-tabs">
+          <button class="account-tab active" id="tab-btn-contact" onclick="switchTab('contact')">معلومات الاتصال</button>
+          <button class="account-tab" id="tab-btn-password" onclick="switchTab('password')">تغيير كلمة المرور</button>
+          <button class="account-tab" id="tab-btn-usage" onclick="switchTab('usage')">Usage</button>
+          <button class="account-tab" id="tab-btn-notifications" onclick="switchTab('notifications')">التنبيهات</button>
+          <button class="account-tab" id="tab-btn-sessions" onclick="switchTab('sessions')">الجلسات</button>
+        </div>
+
+        <!-- TAB: Contact Info -->
+        <div class="tab-panel active" id="panel-contact">
+          <div class="acct-card">
+            <!-- Avatar -->
+            <div class="avatar-section">
+              <div class="big-avatar" id="user-avatar" title="انقر لتغيير الصورة الرمزية">م</div>
+              <div class="avatar-info">
+                <h3 id="display-name">مدير الأسطول</h3>
+                <span id="display-email">admin@fleettrack.pro</span>
+                <div class="role-badge">مدير النظام</div>
+              </div>
+            </div>
+
+            <div class="section-header">معلومات الاتصال</div>
+
+            <div class="acct-row">
+              <span class="acct-label required">الاسم واللقب</span>
+              <input class="acct-input" type="text" id="acct-name" placeholder="أدخل الاسم الكامل..." autocomplete="name">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">شركة</span>
+              <input class="acct-input" type="text" id="acct-company" placeholder="اسم الشركة أو المؤسسة...">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">عنوان</span>
+              <input class="acct-input" type="text" id="acct-address" placeholder="العنوان الكامل...">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">رمز آخر</span>
+              <input class="acct-input" type="text" id="acct-zip" placeholder="الرمز البريدي..." dir="ltr">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">مدينة</span>
+              <input class="acct-input" type="text" id="acct-city" placeholder="اسم المدينة...">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">مقاطعة / الدولة</span>
+              <input class="acct-input" type="text" id="acct-country" placeholder="الدولة أو المنطقة...">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">رقم الهاتف 1</span>
+              <input class="acct-input" type="tel" id="acct-phone1" placeholder="+966 50 xxx xxxx" dir="ltr">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label">رقم الهاتف 2</span>
+              <input class="acct-input" type="tel" id="acct-phone2" placeholder="+966 50 xxx xxxx" dir="ltr">
+            </div>
+            <div class="acct-row">
+              <span class="acct-label required">البريد الإلكتروني</span>
+              <input class="acct-input" type="email" id="acct-email" placeholder="example@domain.com" dir="ltr">
+            </div>
+          </div>
+
+          <div class="acct-actions">
+            <button class="btn btn-secondary" onclick="resetForm()">↩️ إعادة تعيين</button>
+            <button class="btn btn-primary" onclick="saveContactInfo()">💾 حفظ</button>
+          </div>
+        </div>
+
+        <!-- TAB: Password -->
+        <div class="tab-panel" id="panel-password">
+          <div class="acct-card">
+            <div class="section-header">تغيير كلمة المرور</div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">استخدم كلمة مرور قوية تحتوي على أحرف كبيرة وصغيرة وأرقام ورموز.</p>
+
+            <div class="acct-row">
+              <span class="acct-label required">كلمة المرور الحالية</span>
+              <div style="flex:1; max-width:420px;">
+                <input class="acct-input" type="password" id="acct-old-pwd" placeholder="••••••••" autocomplete="current-password" style="width:100%;">
+              </div>
+            </div>
+            <div class="acct-row">
+              <span class="acct-label required">كلمة مرور جديدة</span>
+              <div style="flex:1; max-width:420px;">
+                <input class="acct-input" type="password" id="acct-new-pwd" placeholder="••••••••" autocomplete="new-password" oninput="checkPwdStrength(this.value)" style="width:100%;">
+                <div class="pwd-strength" id="pwd-strength-bar" style="background:var(--border); width:0%;"></div>
+                <div id="pwd-strength-label" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+              </div>
+            </div>
+            <div class="acct-row">
+              <span class="acct-label required">تكرار كلمة مرور جديدة</span>
+              <div style="flex:1; max-width:420px;">
+                <input class="acct-input" type="password" id="acct-confirm-pwd" placeholder="••••••••" autocomplete="new-password" oninput="checkPwdMatch()" style="width:100%;">
+                <div id="pwd-match-label" style="font-size:11px; margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acct-actions">
+            <button class="btn btn-primary" onclick="changePassword()">🔒 تغيير كلمة المرور</button>
+          </div>
+        </div>
+
+        <!-- TAB: Usage -->
+        <div class="tab-panel" id="panel-usage">
+          <div class="acct-card">
+            <div class="section-header">Usage</div>
+
+            <div class="usage-row">
+              <span class="usage-label">Number of e-mails (daily)</span>
+              <span class="usage-val" id="usage-email">0/1000</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-email" style="width:0%"></div></div>
+            </div>
+            <div class="usage-row">
+              <span class="usage-label">Number of SMS (daily)</span>
+              <span class="usage-val" id="usage-sms">0/10000</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-sms" style="width:0%"></div></div>
+            </div>
+            <div class="usage-row">
+              <span class="usage-label">Number of API calls (daily)</span>
+              <span class="usage-val" id="usage-api">22847/100000</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-api" style="width:22.8%"></div></div>
+            </div>
+            <div class="usage-row">
+              <span class="usage-label">عدد المركبات النشطة</span>
+              <span class="usage-val" id="usage-vehicles">—</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-vehicles" style="width:0%"></div></div>
+            </div>
+            <div class="usage-row">
+              <span class="usage-label">حجم التخزين المستخدم</span>
+              <span class="usage-val" id="usage-storage">— KB</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-storage" style="width:0%"></div></div>
+            </div>
+            <div class="usage-row">
+              <span class="usage-label">التنبيهات المرسلة (يومياً)</span>
+              <span class="usage-val" id="usage-alerts">—</span>
+              <div class="usage-bar-wrap"><div class="usage-bar" id="bar-alerts" style="width:0%"></div></div>
+            </div>
+          </div>
+
+          <div class="acct-card">
+            <div class="section-header">إحصائيات الحساب</div>
+            <div id="account-fleet-stats" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px;"></div>
+          </div>
+        </div>
+
+        <!-- TAB: Notifications -->
+        <div class="tab-panel" id="panel-notifications">
+          <div class="acct-card">
+            <div class="section-header">إعدادات التنبيهات</div>
+
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">تنبيهات السرعة الزائدة</div>
+                <div class="notif-desc">إشعار عند تجاوز المركبة للحد المسموح</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-speed" checked onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">تنبيهات الجيوفنس</div>
+                <div class="notif-desc">إشعار عند دخول أو خروج من منطقة محددة</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-geofence" checked onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">تنبيهات الوقود المنخفض</div>
+                <div class="notif-desc">إشعار عند انخفاض مستوى الوقود عن 20%</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-fuel" onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">تنبيهات التوقف المفاجئ</div>
+                <div class="notif-desc">إشعار عند توقف المركبة لأكثر من 30 دقيقة</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-stop" checked onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">انقطاع الاتصال</div>
+                <div class="notif-desc">إشعار عند انقطاع إشارة المركبة لأكثر من 5 دقائق</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-disconnect" checked onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">تقرير يومي</div>
+                <div class="notif-desc">إرسال ملخص يومي على البريد الإلكتروني</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-daily-report" onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div>
+                <div class="notif-label">صوت التنبيهات</div>
+                <div class="notif-desc">تشغيل صوت عند وصول تنبيه جديد</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notif-sound" checked onchange="saveNotifSettings()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Sessions -->
+        <div class="tab-panel" id="panel-sessions">
+          <div class="acct-card">
+            <div class="section-header">الجلسات النشطة</div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">إدارة الأجهزة المتصلة بحسابك. يمكنك إنهاء أي جلسة غير معروفة.</p>
+            <div id="sessions-list"></div>
+            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+              <button class="btn btn-danger" onclick="terminateAllSessions()" style="font-size:13px;">🔐 إنهاء جميع الجلسات الأخرى</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end account-container -->
+    </div><!-- end page-content -->
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/tracking.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/alerts.js"></script>
+<script>
+'use strict';
+
+// ============================================
+// Fleet Track Pro — Account Page Controller
+// ============================================
+
+// Storage keys
+const ACCOUNT_KEY = 'account_profile';
+const NOTIF_KEY   = 'account_notifications';
+
+// ============ Init ============
+FleetData.init();
+TrackingEngine.start();
+AlertsManager.init();
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSharedSidebar();
+  loadAccountData();
+  loadNotifSettings();
+  renderUsageStats();
+  renderSessions();
+});
+
+// ============ Sidebar ============
+function renderSharedSidebar() {
+  const stats = FleetData.getFleetStats();
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  sidebar.innerHTML = `
+    <div class="sidebar-logo">
+      <div class="logo-icon">🚗</div>
+      <div class="logo-text"><h1>Fleet Track Pro</h1><span>نظام تتبع الأسطول</span></div>
+    </div>
+    <div class="fleet-status-mini">
+      <div class="status-badge moving"><span class="count">${stats.moving}</span>يتحرك</div>
+      <div class="status-badge stopped"><span class="count">${stats.stopped}</span>واقف</div>
+      <div class="status-badge idle"><span class="count">${stats.idle + stats.offline}</span>خامل</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">التتبع الحي</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🗺️</span> لوحة التحكم</a>
+      <div class="nav-section-title">الإدارة</div>
+      <a class="nav-item" href="vehicles.html"><span class="nav-icon">🚗</span> إدارة السيارات</a>
+      <a class="nav-item" href="drivers.html"><span class="nav-icon">👤</span> السائقون</a>
+      <div class="nav-section-title">التحليل</div>
+      <a class="nav-item" href="history.html"><span class="nav-icon">📍</span> تاريخ الرحلات</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📊</span> التقارير</a>
+      <a class="nav-item" href="alerts.html"><span class="nav-icon">🔔</span> التنبيهات
+        ${stats.alerts > 0 ? `<span class="nav-badge">${stats.alerts}</span>` : ''}
+      </a>
+      <div class="nav-section-title">الإعدادات</div>
+      <a class="nav-item" href="geofence.html"><span class="nav-icon">🏁</span> مناطق الجيوفنس</a>
+      <a class="nav-item active" href="account.html"><span class="nav-icon">👤</span> حسابي</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="sidebar-avatar">م</div>
+        <div class="user-info">
+          <h4 id="sidebar-name">مدير الأسطول</h4>
+          <span>متصل الآن</span>
+        </div>
+        <div style="font-size:10px;color:var(--green)">●</div>
+      </div>
+    </div>`;
+}
+
+// ============ Tab switching ============
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.account-tab').forEach(b => b.classList.remove('active'));
+
+  const panel = document.getElementById('panel-' + tabId);
+  const btn   = document.getElementById('tab-btn-' + tabId);
+  if (panel) panel.classList.add('active');
+  if (btn)   btn.classList.add('active');
+
+  // Load tab-specific dynamic data
+  if (tabId === 'usage') renderUsageStats();
+  if (tabId === 'sessions') renderSessions();
+}
+
+// ============ Load / Save Account Profile ============
+function getDefaultProfile() {
+  return {
+    name: 'مدير الأسطول',
+    company: '',
+    address: '',
+    zip: '',
+    city: '',
+    country: '',
+    phone1: '',
+    phone2: '',
+    email: 'admin@fleettrack.pro'
+  };
+}
+
+function loadAccountData() {
+  let profile = getDefaultProfile();
+  try {
+    const saved = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
+    if (saved) profile = { ...profile, ...saved };
+  } catch(e) {}
+
+  // Populate fields
+  setVal('acct-name',    profile.name);
+  setVal('acct-company', profile.company);
+  setVal('acct-address', profile.address);
+  setVal('acct-zip',     profile.zip);
+  setVal('acct-city',    profile.city);
+  setVal('acct-country', profile.country);
+  setVal('acct-phone1',  profile.phone1);
+  setVal('acct-phone2',  profile.phone2);
+  setVal('acct-email',   profile.email);
+
+  // Update display
+  updateAvatarDisplay(profile.name);
+  updateSidebarUser(profile.name);
+}
+
+function saveContactInfo() {
+  const name  = getVal('acct-name').trim();
+  const email = getVal('acct-email').trim();
+
+  if (!name) {
+    showToast('يرجى إدخال الاسم واللقب', 'error', '❌');
+    document.getElementById('acct-name').focus();
+    return;
+  }
+  if (!email || !isValidEmail(email)) {
+    showToast('يرجى إدخال بريد إلكتروني صحيح', 'error', '❌');
+    document.getElementById('acct-email').focus();
+    return;
+  }
+
+  const profile = {
+    name,
+    company:  getVal('acct-company'),
+    address:  getVal('acct-address'),
+    zip:      getVal('acct-zip'),
+    city:     getVal('acct-city'),
+    country:  getVal('acct-country'),
+    phone1:   getVal('acct-phone1'),
+    phone2:   getVal('acct-phone2'),
+    email
+  };
+
+  localStorage.setItem(ACCOUNT_KEY, JSON.stringify(profile));
+  updateAvatarDisplay(name);
+  updateSidebarUser(name);
+  showToast('تم حفظ معلومات الاتصال بنجاح', 'success', '✅');
+}
+
+function resetForm() {
+  const profile = getDefaultProfile();
+  localStorage.removeItem(ACCOUNT_KEY);
+  loadAccountData();
+  showToast('تمت إعادة تعيين البيانات', 'info', 'ℹ️');
+}
+
+function saveAllSettings() {
+  saveContactInfo();
+  saveNotifSettings();
+}
+
+// ============ Password ============
+function checkPwdStrength(pwd) {
+  const bar   = document.getElementById('pwd-strength-bar');
+  const label = document.getElementById('pwd-strength-label');
+  if (!bar || !label) return;
+
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[a-z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+  const levels = [
+    { pct: '0%',   color: 'var(--border)', text: '' },
+    { pct: '20%',  color: 'var(--red)',    text: 'ضعيفة جداً' },
+    { pct: '40%',  color: '#f97316',       text: 'ضعيفة' },
+    { pct: '60%',  color: 'var(--yellow)', text: 'متوسطة' },
+    { pct: '80%',  color: 'var(--green)',  text: 'قوية' },
+    { pct: '100%', color: '#06b6d4',       text: 'قوية جداً' }
+  ];
+
+  const lvl = pwd.length === 0 ? levels[0] : levels[Math.min(score, 5)];
+  bar.style.width     = lvl.pct;
+  bar.style.background = lvl.color;
+  label.textContent   = lvl.text;
+  label.style.color   = lvl.color;
+}
+
+function checkPwdMatch() {
+  const newPwd     = getVal('acct-new-pwd');
+  const confirmPwd = getVal('acct-confirm-pwd');
+  const label      = document.getElementById('pwd-match-label');
+  if (!label) return;
+
+  if (!confirmPwd) { label.textContent = ''; return; }
+  if (newPwd === confirmPwd) {
+    label.textContent = '✓ كلمتا المرور متطابقتان';
+    label.style.color = 'var(--green)';
+  } else {
+    label.textContent = '✗ كلمتا المرور غير متطابقتين';
+    label.style.color = 'var(--red)';
+  }
+}
+
+function changePassword() {
+  const oldPwd     = getVal('acct-old-pwd');
+  const newPwd     = getVal('acct-new-pwd');
+  const confirmPwd = getVal('acct-confirm-pwd');
+
+  if (!oldPwd) {
+    showToast('يرجى إدخال كلمة المرور الحالية', 'error', '❌');
+    return;
+  }
+  if (!newPwd || newPwd.length < 8) {
+    showToast('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل', 'error', '❌');
+    return;
+  }
+  if (newPwd !== confirmPwd) {
+    showToast('كلمتا المرور غير متطابقتين', 'error', '❌');
+    return;
+  }
+  if (oldPwd === newPwd) {
+    showToast('كلمة المرور الجديدة يجب أن تختلف عن القديمة', 'warning', '⚠️');
+    return;
+  }
+
+  // Simulate password change (in real app: API call)
+  setVal('acct-old-pwd', '');
+  setVal('acct-new-pwd', '');
+  setVal('acct-confirm-pwd', '');
+  checkPwdStrength('');
+  checkPwdMatch();
+
+  showToast('تم تغيير كلمة المرور بنجاح', 'success', '🔒');
+}
+
+// ============ Usage Stats ============
+function renderUsageStats() {
+  const vehicles = FleetData.getVehicles();
+  const alerts   = FleetData.getAlerts();
+  const active   = vehicles.filter(v => v.status !== 'offline').length;
+  const totalMax = vehicles.length > 0 ? vehicles.length : 1;
+
+  // Calculate localStorage usage
+  let storageBytes = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      storageBytes += (localStorage[key].length + key.length) * 2;
+    }
+  }
+  const storageKB = (storageBytes / 1024).toFixed(1);
+  const storageMax = 5 * 1024; // 5MB typical limit
+
+  // Today's alerts
+  const today = new Date().toISOString().split('T')[0];
+  const todayAlerts = alerts.filter(a => a.timestamp && a.timestamp.startsWith(today)).length;
+
+  // Update DOM
+  setUsageRow('usage-email', 'bar-email', 0, 1000, '0/1000');
+  setUsageRow('usage-sms',   'bar-sms',   0, 10000, '0/10000');
+  setUsageRow('usage-api',   'bar-api',   22847, 100000, '22847/100000');
+  setUsageRow('usage-vehicles', 'bar-vehicles', active, totalMax, `${active}/${vehicles.length}`);
+  setUsageRow('usage-storage', 'bar-storage', parseFloat(storageKB), storageMax, `${storageKB} KB`);
+  setUsageRow('usage-alerts', 'bar-alerts', todayAlerts, 50, `${todayAlerts}/50`);
+
+  // Fleet stats cards
+  const stats = FleetData.getFleetStats();
+  const cardsEl = document.getElementById('account-fleet-stats');
+  if (cardsEl) {
+    cardsEl.innerHTML = [
+      { icon: '🚗', val: stats.total,   label: 'إجمالي المركبات', color: 'var(--accent)' },
+      { icon: '✅', val: stats.moving,  label: 'متحركة الآن',    color: 'var(--green)' },
+      { icon: '⛔', val: stats.stopped, label: 'متوقفة',          color: 'var(--red)' },
+      { icon: '💤', val: stats.offline, label: 'غير متصلة',       color: 'var(--text-muted)' },
+      { icon: '📍', val: stats.todayKm, label: 'كم اليوم',        color: 'var(--cyan)' },
+      { icon: '🔔', val: stats.alerts,  label: 'تنبيهات غير مقروءة', color: 'var(--yellow)' }
+    ].map(c => `
+      <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center;">
+        <div style="font-size:22px; margin-bottom:6px;">${c.icon}</div>
+        <div style="font-size:18px; font-weight:800; color:${c.color};">${c.val}</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${c.label}</div>
+      </div>`).join('');
+  }
+}
+
+function setUsageRow(valId, barId, current, max, displayText) {
+  const valEl = document.getElementById(valId);
+  const barEl = document.getElementById(barId);
+  if (valEl) valEl.textContent = displayText;
+  if (barEl) {
+    const pct = Math.min(100, (current / max) * 100);
+    barEl.style.width = pct + '%';
+    barEl.className = 'usage-bar' + (pct > 80 ? ' danger' : '');
+  }
+}
+
+// ============ Notification Settings ============
+function loadNotifSettings() {
+  let notifs = {};
+  try {
+    notifs = JSON.parse(localStorage.getItem(NOTIF_KEY) || '{}');
+  } catch(e) {}
+
+  const defaults = {
+    'notif-speed': true, 'notif-geofence': true, 'notif-fuel': false,
+    'notif-stop': true, 'notif-disconnect': true, 'notif-daily-report': false,
+    'notif-sound': true
+  };
+  Object.keys(defaults).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = (id in notifs) ? notifs[id] : defaults[id];
+  });
+}
+
+function saveNotifSettings() {
+  const ids = ['notif-speed','notif-geofence','notif-fuel','notif-stop','notif-disconnect','notif-daily-report','notif-sound'];
+  const notifs = {};
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) notifs[id] = el.checked;
+  });
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(notifs));
+}
+
+// ============ Sessions ============
+function renderSessions() {
+  const list = document.getElementById('sessions-list');
+  if (!list) return;
+
+  const sessions = [
+    { icon: '💻', device: 'Chrome على Windows', meta: 'هذا الجهاز • الرياض، المملكة العربية السعودية', current: true,  id: 's1' },
+    { icon: '📱', device: 'Safari على iPhone',   meta: 'آخر نشاط: منذ 3 ساعات • جدة',               current: false, id: 's2' },
+    { icon: '🖥️', device: 'Firefox على Mac',     meta: 'آخر نشاط: منذ يومين • الدمام',              current: false, id: 's3' }
+  ];
+
+  list.innerHTML = sessions.map(s => `
+    <div class="session-card" id="sess-${s.id}">
+      <div class="session-icon">${s.icon}</div>
+      <div class="session-info">
+        <div class="s-device">${s.device}</div>
+        <div class="s-meta">${s.meta}</div>
+      </div>
+      ${s.current
+        ? '<span class="session-current">الجلسة الحالية</span>'
+        : `<button class="btn btn-danger btn-sm" onclick="terminateSession('${s.id}')">إنهاء</button>`
+      }
+    </div>`).join('');
+}
+
+function terminateSession(id) {
+  const el = document.getElementById('sess-' + id);
+  if (el) {
+    el.style.opacity = '0.4';
+    el.style.pointerEvents = 'none';
+    el.querySelector('button').textContent = '✓ تم الإنهاء';
+  }
+  showToast('تم إنهاء الجلسة بنجاح', 'success', '🔒');
+}
+
+function terminateAllSessions() {
+  document.querySelectorAll('.session-card:not(:first-child)').forEach(el => {
+    el.style.opacity = '0.4';
+    el.style.pointerEvents = 'none';
+    const btn = el.querySelector('button');
+    if (btn) btn.textContent = '✓ تم الإنهاء';
+  });
+  showToast('تم إنهاء جميع الجلسات الأخرى', 'success', '🔐');
+}
+
+// ============ Helpers ============
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function updateAvatarDisplay(name) {
+  const initials = (name || 'م').split(' ').map(n => n[0]).join('').substring(0, 2);
+  const avatarEl = document.getElementById('user-avatar');
+  const nameEl   = document.getElementById('display-name');
+  const emailEl  = document.getElementById('display-email');
+
+  if (avatarEl) avatarEl.textContent = initials;
+  if (nameEl)   nameEl.textContent = name || 'مدير الأسطول';
+  if (emailEl)  emailEl.textContent = getVal('acct-email') || 'admin@fleettrack.pro';
+}
+
+function updateSidebarUser(name) {
+  const initials  = (name || 'م').split(' ').map(n => n[0]).join('').substring(0, 2);
+  const sAvatar   = document.getElementById('sidebar-avatar');
+  const sName     = document.getElementById('sidebar-name');
+  if (sAvatar) sAvatar.textContent = initials;
+  if (sName)   sName.textContent   = name || 'مدير الأسطول';
+}
+
+// Toast notification
+function showToast(msg, type, icon) {
+  if (typeof AlertsManager !== 'undefined') {
+    AlertsManager.showToast(msg, type, icon);
+    return;
+  }
+  // Fallback
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = (icon || '') + ' ' + msg;
+  t.style.cssText = 'background:#1e293b;color:#f1f5f9;padding:12px 20px;border-radius:8px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

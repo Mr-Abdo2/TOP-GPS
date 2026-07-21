@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — السائقون</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .drivers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .driver-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+      transition: all 0.3s ease; text-align: center;
+    }
+    .driver-card:hover { border-color: rgba(59,130,246,0.3); transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.3); }
+    .driver-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 800; color: white;
+      margin: 0 auto 12px; box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .driver-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .driver-phone { font-size: 12px; color: var(--text-secondary); direction: ltr; margin-bottom: 12px; }
+    .rating-stars { font-size: 14px; margin-bottom: 12px; }
+    .driver-stats-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+    .d-stat { flex: 1; padding: 8px 4px; text-align: center; background: var(--bg-secondary); border-left: 1px solid var(--border); }
+    .d-stat:last-child { border-left: none; }
+    .d-stat-val { font-size: 14px; font-weight: 800; }
+    .d-stat-lbl { font-size: 9px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <header class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title">👤 إدارة السائقين</div>
+        <div class="topbar-subtitle">بيانات وأداء سائقي الأسطول</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openAddDriverModal()">➕ إضافة سائق</button>
+      </div>
+    </header>
+    <div class="page-content" id="page-content">
+      <div class="kpi-grid" id="driver-kpis" style="margin-bottom:20px"></div>
+      <div class="drivers-grid" id="drivers-grid"></div>
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+
+<!-- Add Driver Modal -->
+<div class="modal-overlay" id="driver-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">إضافة سائق جديد</div>
+      <button class="modal-close" onclick="closeDriverModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">الاسم الكامل *</label><input type="text" class="form-control" id="df-name" placeholder="أحمد محمد..."></div>
+        <div class="form-group"><label class="form-label">رقم الهاتف *</label><input type="text" class="form-control" id="df-phone" placeholder="010xxxxxxxx" dir="ltr"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">رقم الرخصة</label><input type="text" class="form-control" id="df-license" dir="ltr"></div>
+        <div class="form-group"><label class="form-label">السيارة المخصصة</label>
+          <select class="form-control" id="df-vehicle">
+            <option value="">-- بدون سيارة --</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDriverModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveDriver()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/tracking.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/alerts.js"></script>
+<script>
+FleetData.init();
+TrackingEngine.start();
+AlertsManager.init();
+
+function renderSharedSidebar() {
+  const stats = FleetData.getFleetStats();
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-logo"><div class="logo-icon">🚗</div><div class="logo-text"><h1>Fleet Track Pro</h1><span>نظام تتبع الأسطول</span></div></div>
+    <div class="fleet-status-mini">
+      <div class="status-badge moving"><span class="count">${stats.moving}</span>يتحرك</div>
+      <div class="status-badge stopped"><span class="count">${stats.stopped}</span>واقف</div>
+      <div class="status-badge idle"><span class="count">${stats.idle + stats.offline}</span>خامل</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">التتبع الحي</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🗺️</span> لوحة التحكم</a>
+      <div class="nav-section-title">الإدارة</div>
+      <a class="nav-item" href="vehicles.html"><span class="nav-icon">🚗</span> إدارة السيارات</a>
+      <a class="nav-item active" href="drivers.html"><span class="nav-icon">👤</span> السائقون</a>
+      <div class="nav-section-title">التحليل</div>
+      <a class="nav-item" href="history.html"><span class="nav-icon">📍</span> تاريخ الرحلات</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📊</span> التقارير</a>
+      <a class="nav-item" href="alerts.html"><span class="nav-icon">🔔</span> التنبيهات<span class="nav-badge" id="alert-nav-badge">${stats.alerts}</span></a>
+      <div class="nav-section-title">الإعدادات</div>
+      <a class="nav-item" href="geofence.html"><span class="nav-icon">🏁</span> مناطق الجيوفنس</a>
+      <a class="nav-item" href="account.html"><span class="nav-icon">👤</span> حسابي</a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-avatar">م</div><div class="user-info"><h4>مدير الأسطول</h4><span>متصل الآن</span></div></div></div>`;
+}
+
+function renderKPIs() {
+  const drivers = FleetData.getDrivers();
+  const assigned = drivers.filter(d => d.vehicleId).length;
+  const avgRating = (drivers.reduce((s, d) => s + (d.rating || 0), 0) / drivers.length).toFixed(1);
+  document.getElementById('driver-kpis').innerHTML = `
+    <div class="kpi-card blue"><div class="kpi-icon">👤</div><div class="kpi-value">${drivers.length}</div><div class="kpi-label">إجمالي السائقين</div></div>
+    <div class="kpi-card green"><div class="kpi-icon">🚗</div><div class="kpi-value text-green">${assigned}</div><div class="kpi-label">لديهم سيارات</div></div>
+    <div class="kpi-card yellow"><div class="kpi-icon">💤</div><div class="kpi-value text-yellow">${drivers.length - assigned}</div><div class="kpi-label">بدون سيارة</div></div>
+    <div class="kpi-card cyan"><div class="kpi-icon">⭐</div><div class="kpi-value" style="color:var(--yellow)">${avgRating}</div><div class="kpi-label">متوسط التقييم</div></div>`;
+}
+
+function renderDrivers() {
+  const drivers = FleetData.getDrivers();
+  const monthlyStats = FleetData.getMonthlyStats();
+  const grid = document.getElementById('drivers-grid');
+
+  grid.innerHTML = drivers.map(d => {
+    const v = FleetData.getVehicleById(d.vehicleId);
+    const ms = v ? (monthlyStats[v.id] || { km: 0, trips: 0 }) : { km: 0, trips: 0 };
+    const stars = '⭐'.repeat(Math.round(d.rating || 0));
+    const initials = d.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+    const gradients = [
+      'linear-gradient(135deg,#3b82f6,#7c3aed)',
+      'linear-gradient(135deg,#22c55e,#06b6d4)',
+      'linear-gradient(135deg,#f59e0b,#ef4444)',
+      'linear-gradient(135deg,#a855f7,#ec4899)',
+      'linear-gradient(135deg,#06b6d4,#3b82f6)',
+    ];
+    const grad = gradients[drivers.indexOf(d) % gradients.length];
+    return `
+      <div class="driver-card">
+        <div class="driver-avatar" style="background:${grad}">${initials}</div>
+        <div class="driver-name">${d.name}</div>
+        <div class="driver-phone">${d.phone}</div>
+        <div class="rating-stars">${stars} <span style="font-size:12px;color:var(--text-secondary)">(${d.rating})</span></div>
+        <div class="driver-stats-row">
+          <div class="d-stat"><div class="d-stat-val text-accent">${ms.km.toFixed(0)}</div><div class="d-stat-lbl">كم</div></div>
+          <div class="d-stat"><div class="d-stat-val">${ms.trips}</div><div class="d-stat-lbl">رحلة</div></div>
+          <div class="d-stat">
+            <div class="d-stat-val" style="color:${v ? 'var(--green)' : 'var(--text-muted)'}; font-size:11px">
+              ${v ? v.name.replace('السيارة ', 'س') : 'لا يوجد'}
+            </div>
+            <div class="d-stat-lbl">السيارة</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn btn-secondary btn-sm" onclick="editDriverVehicle('${d.id}')">✏️ تعديل</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDriver('${d.id}')">🗑️</button>
+          ${v ? `<a href="history.html?id=${v.id}" class="btn btn-sm" style="background:rgba(59,130,246,0.15);color:var(--accent-light);border:1px solid rgba(59,130,246,0.3);text-decoration:none">📍 رحلاته</a>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openAddDriverModal() {
+  const vehicles = FleetData.getVehicles();
+  document.getElementById('df-vehicle').innerHTML = '<option value="">-- بدون سيارة --</option>' +
+    vehicles.map(v => `<option value="${v.id}">${v.name} — ${v.plate}</option>`).join('');
+  document.getElementById('driver-modal').classList.add('open');
+}
+
+function closeDriverModal() { document.getElementById('driver-modal').classList.remove('open'); }
+
+function saveDriver() {
+  const name = document.getElementById('df-name').value.trim();
+  const phone = document.getElementById('df-phone').value.trim();
+  if (!name || !phone) { AlertsManager.showToast('يرجى ملء الاسم والهاتف', 'error', '❌'); return; }
+  const drivers = FleetData.getDrivers();
+  drivers.push({
+    id: 'd' + Date.now(),
+    name, phone,
+    license: document.getElementById('df-license').value,
+    vehicleId: document.getElementById('df-vehicle').value,
+    rating: 4.5
+  });
+  FleetData.saveDrivers(drivers);
+  closeDriverModal();
+  renderDrivers();
+  renderKPIs();
+  AlertsManager.showToast('تمت إضافة السائق بنجاح', 'success', '✅');
+}
+
+function deleteDriver(id) {
+  if (!confirm('هل تريد حذف هذا السائق؟')) return;
+  const drivers = FleetData.getDrivers().filter(d => d.id !== id);
+  FleetData.saveDrivers(drivers);
+  renderDrivers();
+  renderKPIs();
+  AlertsManager.showToast('تم حذف السائق', 'success', '🗑️');
+}
+
+function editDriverVehicle(id) {
+  AlertsManager.showToast('ميزة التعديل الكامل قريباً', 'warning', '🔧');
+}
+
+renderSharedSidebar();
+renderKPIs();
+renderDrivers();
+</script>
+</body>
+</html>

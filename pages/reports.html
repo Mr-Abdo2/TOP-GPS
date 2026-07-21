@@ -1,0 +1,2645 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — التقارير</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Report Config Panel ── */
+    .rpt-config-wrap {
+      padding: 20px;
+    }
+
+    .rpt-config-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .rpt-config-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rpt-config-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .rpt-config-header-left {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.05);
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .rpt-config-header-left.active {
+      color: #fff;
+      background: rgba(255,255,255,0.25);
+      border-color: rgba(255,255,255,0.4);
+      font-weight: 700;
+    }
+    .rpt-config-header-left:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .rpt-config-body {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px 32px;
+    }
+
+    .rpt-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rpt-field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .rpt-field:last-child { margin-bottom: 0; }
+
+    .rpt-field-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 100px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+
+    .rpt-field-input,
+    .rpt-field-select {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .rpt-field-input:focus,
+    .rpt-field-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .rpt-field-select option { background: #1a2035; }
+
+    .rpt-field-num {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+    .rpt-field-num input {
+      width: 70px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      text-align: center;
+    }
+    .rpt-field-num input:focus { outline: none; border-color: var(--accent); }
+    .rpt-field-num .num-btn {
+      width: 28px; height: 28px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .rpt-field-num .num-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Custom Multiselect ── */
+    .rpt-multiselect {
+      flex: 1;
+      position: relative;
+      user-select: none;
+    }
+    .rpt-multiselect-header {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+    .rpt-multiselect-header:hover {
+      border-color: var(--accent);
+    }
+    .rpt-multiselect-options {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1c2233;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-top: 4px;
+      max-height: 240px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      padding: 8px;
+    }
+    .rpt-multiselect-options.active {
+      display: block;
+    }
+    .rpt-multiselect-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-primary);
+      font-size: 12px;
+      transition: background 0.15s;
+    }
+    .rpt-multiselect-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .rpt-multiselect-option input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+
+    .rpt-checks {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .rpt-check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .rpt-check-item input {
+      width: 15px; height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .rpt-check-item.row {
+      flex-direction: row;
+    }
+
+    .rpt-divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Time inputs row */
+    .rpt-time-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .rpt-time-row input[type="date"],
+    .rpt-time-row input[type="time"] {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .rpt-time-row input:focus { outline: none; border-color: var(--accent); }
+    .time-sep {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 0 2px;
+    }
+    .rpt-time-select {
+      width: 60px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+      text-align: center;
+    }
+    .rpt-time-select option { background: #1a2035; }
+
+    /* Bottom actions */
+    .rpt-config-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-secondary);
+    }
+
+    .btn-generate {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(34,197,94,0.3);
+    }
+    .btn-generate:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(34,197,94,0.4);
+    }
+
+    .btn-cancel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(239,68,68,0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover { background: rgba(239,68,68,0.2); }
+
+    /* ── Result area (after generate) ── */
+    .rpt-result {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+    }
+    .rpt-result.active { display: flex; }
+
+    .chart-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .stat-row:last-child { border-bottom: none; }
+    .rank-number { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <header class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title">📊 التقارير والإحصائيات</div>
+        <div class="topbar-subtitle">تحليل شامل لأداء الأسطول</div>
+      </div>
+      <div class="topbar-right">
+        <button id="topbar-export-excel" class="btn" style="background:#10b981;color:#fff;border:none;display:none;align-items:center;gap:6px;font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;cursor:pointer" onclick="triggerExcelDownload('latest')">📊 تصدير Excel</button>
+        <button id="topbar-export-pdf" class="btn" style="background:#ef4444;color:#fff;border:none;display:none;align-items:center;gap:6px;font-weight:700;font-size:12px;padding:8px 12px;border-radius:6px;cursor:pointer" onclick="triggerPdfDownload('latest')">📄 تصدير PDF</button>
+        <select class="form-control" id="report-period" style="min-width:160px">
+          <option value="today">اليوم</option>
+          <option value="yesterday">أمس</option>
+          <option value="week" selected>آخر 7 أيام</option>
+          <option value="month">آخر 30 يوم</option>
+        </select>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ طباعة</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- ══ Config Form ══ -->
+      <div id="config-view" class="rpt-config-wrap" style="padding:0">
+        <div class="rpt-config-card">
+
+        <!-- Header -->
+        <div class="rpt-config-header">
+          <div class="rpt-config-header-right">
+            ⚙️ خصائص التقرير (Report Properties)
+          </div>
+          <div style="display:flex;gap:10px">
+            <div class="rpt-config-header-left active" id="tab-config" onclick="showReportTab('config')" style="cursor:pointer">لوحة التحكم بالتقارير الذكية</div>
+            <div class="rpt-config-header-left" id="tab-generated" onclick="showReportTab('generated')" style="cursor:pointer">Generated</div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="rpt-config-body" id="config-body-view">
+
+          <!-- ── Right Column: Report Settings ── -->
+          <div>
+            <div class="rpt-section-title">📄 إعدادات التقرير</div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">الاسم:</span>
+              <input class="rpt-field-input" id="rf-name" value="تقرير الفروع والتوقفات اليومي" placeholder="اسم التقرير...">
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">نوع التقرير:</span>
+              <select class="rpt-field-select" id="rf-type">
+                <optgroup label="Text reports — تقارير نصية">
+                  <option value="gen_info" selected>معلومات عامة</option>
+                  <option value="gen_info_merged">معلومات عامة (المدمجة)</option>
+                  <option value="obj_info">Object information</option>
+                  <option value="cur_pos">Current position</option>
+                  <option value="cur_pos_offline">Current position (offline)</option>
+                  <option value="drives_stops">تحرك و توقف</option>
+                  <option value="drives_stops_sensors">Drives and stops with sensors</option>
+                  <option value="drives_stops_logic">Drives and stops with logic sensors</option>
+                  <option value="travel_sheet">ورقة السفر</option>
+                  <option value="travel_sheet_day_night">Travel sheet (day/night)</option>
+                  <option value="mileage_daily">Mileage (daily)</option>
+                  <option value="working_hours_mileage">Working Hours and Mileage (daily)</option>
+                  <option value="working_hours_mileage_compact">Working Hours and Mileage (daily) [compact]</option>
+                  <option value="overspeed">السرعة الزائدة</option>
+                  <option value="underspeed">تحت سرعة</option>
+                  <option value="geofence_in_out">منطقة داخل / خارج</option>
+                  <option value="zone_in_out_gen">Zone in/out with gen. information</option>
+                  <option value="events">أحداث</option>
+                  <option value="service">خدمة</option>
+                  <option value="fuel_fillings">حشو الوقود</option>
+                  <option value="fuel_thefts">سرقة الوقود</option>
+                  <option value="logic_sensors">Logic sensors</option>
+                  <option value="driver_behavior_object">Driver behavior (RAG by object)</option>
+                  <option value="driver_behavior_driver">Driver behavior (RAG by driver)</option>
+                  <option value="driver_behavior_rag">Driver behavior (RAG)</option>
+                  <option value="tasks">Tasks</option>
+                  <option value="rfid_ibutton">RFID and iButton logbook</option>
+                  <option value="dtc">DTC (Diagnostic Trouble Codes)</option>
+                  <option value="expenses">Expenses</option>
+                  <option value="temp_humidity">Temperature and Humidity</option>
+                </optgroup>
+                <optgroup label="Graphical reports — تقارير بيانية">
+                  <option value="graph_speed">السرعة</option>
+                  <option value="graph_altitude">ارتفاع</option>
+                  <option value="graph_ignition">Ignition</option>
+                  <option value="graph_fuel">مستوى الوقود</option>
+                  <option value="graph_temp">Temperature</option>
+                  <option value="graph_sensor">الاستشعار</option>
+                </optgroup>
+                <optgroup label="Map reports — تقارير الخرائط">
+                  <option value="map_routes">Routes</option>
+                  <option value="map_routes_stops">Routes with stops</option>
+                </optgroup>
+                <optgroup label="Media reports — تقارير الوسائط">
+                  <option value="media_gallery">Image gallery</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">المركبة:</span>
+              <div class="rpt-multiselect" id="multiselect-vehicle">
+                <div class="rpt-multiselect-header" onclick="toggleVehicleDropdown(event)">
+                  <span id="multiselect-label">Nothing selected / لم يتم اختيار أي سيارة</span>
+                  <span class="arrow" style="font-size:10px">▼</span>
+                </div>
+                <div class="rpt-multiselect-options" id="multiselect-options" onclick="event.stopPropagation()">
+                  <label class="rpt-multiselect-option" style="border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:8px;margin-bottom:4px">
+                    <input type="checkbox" id="chk-all-vehicles" onchange="toggleAllVehicles(this.checked)">
+                    <span style="font-weight:700;color:var(--accent-light)">اختيار الكل (Select All)</span>
+                  </label>
+                  <div id="vehicles-checkbox-list" style="display:flex;flex-direction:column;gap:4px"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">المنطقة / الفرع:</span>
+              <select class="rpt-field-select" id="rf-zone">
+                <option>-- جميع الفروع الكبرى --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ── Left Column: Filter Criteria ── -->
+          <div>
+            <div class="rpt-section-title">🔧 معايير التصفية</div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">شكل التقرير:</span>
+              <select class="rpt-field-select" id="rf-format">
+                <option>HTML (عرض تفاعلي بالمتصفح)</option>
+                <option>PDF</option>
+                <option>Excel (XLS)</option>
+                <option>CSV</option>
+              </select>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">الحد للتوقف:</span>
+              <div class="rpt-field-num">
+                <button class="num-btn" onclick="adjustNum('rf-stop',-1)">−</button>
+                <input type="number" id="rf-stop" value="1" min="1">
+                <button class="num-btn" onclick="adjustNum('rf-stop',1)">＋</button>
+                <span style="font-size:11px;color:var(--text-muted)">دقيقة</span>
+              </div>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">حد السرعة:</span>
+              <div class="rpt-field-num">
+                <button class="num-btn" onclick="adjustNum('rf-speed',-10)">−</button>
+                <input type="number" id="rf-speed" value="100" min="0">
+                <button class="num-btn" onclick="adjustNum('rf-speed',10)">＋</button>
+                <span style="font-size:11px;color:var(--text-muted)">كم/س</span>
+              </div>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">إظهار:</span>
+              <div style="display:flex;gap:20px;flex:1">
+                <label class="rpt-check-item row"><input type="checkbox" checked id="rf-coords"> إظهار الإحداثيات</label>
+                <label class="rpt-check-item row"><input type="checkbox" checked id="rf-addr"> إظهار العناوين</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="rpt-divider"></div>
+
+          <!-- ── Right Column: Time Period ── -->
+          <div>
+            <div class="rpt-section-title">📅 الفترة الزمنية للتقرير</div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">الفترة:</span>
+              <select class="rpt-field-select" id="rf-period" onchange="updateDates()">
+                <option value="today">اليوم</option>
+                <option value="yesterday">أمس</option>
+                <option value="week" selected>آخر 7 أيام</option>
+                <option value="month">آخر 30 يوم</option>
+              </select>
+            </div>
+
+            <div class="rpt-field" id="rf-from-row">
+              <span class="rpt-field-label">الوقت من:</span>
+              <div class="rpt-time-row">
+                <select class="rpt-time-select" id="rf-from-h">
+                  <option>00</option><option>01</option><option>02</option><option>03</option>
+                  <option>04</option><option>05</option><option>06</option><option>07</option>
+                  <option>08</option><option>09</option><option>10</option><option>11</option>
+                  <option>12</option><option>13</option><option>14</option><option>15</option>
+                  <option>16</option><option>17</option><option>18</option><option>19</option>
+                  <option>20</option><option>21</option><option>22</option><option>23</option>
+                </select>
+                <span class="time-sep">:</span>
+                <select class="rpt-time-select" id="rf-from-m">
+                  <option>00</option><option>15</option><option>30</option><option>45</option>
+                </select>
+                <span class="time-sep">▼</span>
+                <input type="date" id="rf-from-date" style="flex:1">
+              </div>
+            </div>
+
+            <div class="rpt-field" id="rf-to-row">
+              <span class="rpt-field-label">الوقت إلى:</span>
+              <div class="rpt-time-row">
+                <select class="rpt-time-select" id="rf-to-h">
+                  <option>00</option><option>01</option><option>02</option><option>03</option>
+                  <option>04</option><option>05</option><option>06</option><option>07</option>
+                  <option>08</option><option>09</option><option>10</option><option>11</option>
+                  <option>12</option><option>13</option><option>14</option><option>15</option>
+                  <option>16</option><option>17</option><option>18</option><option>19</option>
+                  <option>20</option><option>21</option><option>22</option><option>23</option>
+                </select>
+                <span class="time-sep">:</span>
+                <select class="rpt-time-select" id="rf-to-m">
+                  <option>00</option><option>15</option><option>30</option><option>45</option>
+                </select>
+                <span class="time-sep">▼</span>
+                <input type="date" id="rf-to-date" style="flex:1">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Left Column: Schedule ── -->
+          <div>
+            <div class="rpt-section-title">🗓️ جدولة التقارير التلقائية</div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label" style="min-width:unset"></span>
+              <div style="display:flex;gap:24px;flex:1">
+                <label class="rpt-check-item row"><input type="checkbox" id="rf-daily"> تقرير يومي</label>
+                <label class="rpt-check-item row"><input type="checkbox" id="rf-weekly"> تقرير أسبوعي</label>
+              </div>
+            </div>
+
+            <div class="rpt-field">
+              <span class="rpt-field-label">إرسال للإيميل:</span>
+              <input class="rpt-field-input" id="rf-email" type="email" placeholder="admin@company.com">
+            </div>
+          </div>
+
+        </div><!-- end rpt-config-body -->
+
+        <!-- Footer Actions -->
+        <div class="rpt-config-footer" id="config-footer-view">
+          <button class="btn-generate" onclick="generateReport()">
+            ⚡ توليد التقرير (Generate)
+          </button>
+          <button class="btn-cancel" onclick="clearForm()">
+            ✕ إلغاء / مسح
+          </button>
+        </div>
+        
+        <!-- Generated View (Initially hidden) -->
+        <div id="generated-list-view" style="display:none;padding:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:14px;color:var(--text-primary);font-weight:700">📋 أرشيف التقارير المنجزة (Generated Reports Archive)</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-secondary" onclick="renderGeneratedReportsList()" style="font-size:11px;padding:6px 12px;display:flex;align-items:center;gap:6px">🔄 تحديث</button>
+              <button class="btn btn-secondary" onclick="clearAllGeneratedReports()" style="font-size:11px;padding:6px 12px;display:flex;align-items:center;gap:6px">🗑️ مسح الأرشيف</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table style="width:100%;border-collapse:collapse" id="generated-reports-table">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="width:30px;padding:12px 10px"><input type="checkbox" onchange="toggleSelectAllGenerated(this.checked)" style="cursor:pointer"></th>
+                  <th style="padding:12px 10px;text-align:right">وقت الإنشاء</th>
+                  <th style="padding:12px 10px;text-align:right">اسم التقرير</th>
+                  <th style="padding:12px 10px;text-align:right">نوع التقرير</th>
+                  <th style="padding:12px 10px;text-align:right">شكل التقرير</th>
+                  <th style="padding:12px 10px;text-align:right">المركبات</th>
+                  <th style="padding:12px 10px;text-align:right">المناطق</th>
+                  <th style="padding:12px 10px;text-align:right">الحساسات</th>
+                  <th style="padding:12px 10px;text-align:right">مجدول</th>
+                  <th style="width:90px;text-align:center;padding:12px 10px">إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="generated-reports-tbody">
+                <!-- Dynamically filled -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- end rpt-config-card -->
+    </div>
+
+    <!-- ══ Result View (shown after Generate) ══ -->
+    <div id="result-view" class="rpt-result">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:12px">
+        <div>
+          <div style="font-size:16px;font-weight:700" id="result-title">نتائج التقرير</div>
+          <div style="font-size:12px;color:var(--text-secondary)" id="result-meta"></div>
+        </div>
+        <button class="btn btn-secondary" onclick="backToConfig()">← تعديل الإعدادات</button>
+      </div>
+
+      <!-- تنبيه إضافات التنزيل -->
+      <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#93c5fd;display:flex;align-items:center;gap:8px;direction:rtl">
+        <span style="font-size:16px">💡</span>
+        <div>
+          <b>تلميح للتنزيل:</b> إذا كان لديك برنامج تنزيل (مثل Chrono/IDM) يحفظ الملف باسم عشوائي، يرجى <b>الضغط بزر الفأرة الأيمن على زر التصدير واختيار "حفظ الرابط باسم..." (Save Link As)</b> أو اضغط <b>Alt + Click</b> للتنزيل المباشر بالاسم العربي الصحيح.
+        </div>
+      </div>
+
+      <!-- Dynamic Content Area -->
+      <div id="dynamic-result-area" style="display:flex;flex-direction:column;gap:16px"></div>
+    </div>
+
+  </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/tracking.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/alerts.js"></script>
+<script>
+FleetData.init();
+TrackingEngine.start();
+AlertsManager.init();
+
+Chart.defaults.color = '#8892a4';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+Chart.defaults.font.family = "'Cairo', 'Inter', sans-serif";
+
+let charts = {};
+
+// ── Global Exporter Helpers ──
+const globalNid = v => {
+  const id = v.id;
+  if (typeof id === 'number') return Math.abs(id) || 1;
+  const digits = String(id).replace(/\D/g, '');
+  if (digits.length > 0) return parseInt(digits, 10) || 1;
+  return String(id).split('').reduce((s, c) => s + c.charCodeAt(0), 0) || 1;
+};
+
+const globalLocations = [
+  'طريق الملك فهد، الرياض','طريق العليا، الرياض','حي المروج، الرياض',
+  'طريق الإمام سعود، الرياض','حي النزهة، الرياض','طريق الدائري الثالث',
+  'حي الياسمين، الرياض','طريق الملك عبدالله، الرياض','حي الربوة، الرياض',
+  'طريق صلبوخ، الرياض','حي الشفا، الرياض','حي الملقا، الرياض'
+];
+const globalLoc = i => globalLocations[Math.abs(i) % globalLocations.length];
+
+const globalWaypoints = [
+  { name: 'مستودع الشركة — الرياض',         lat: 24.7136, lng: 46.6753 },
+  { name: 'طريق الملك فهد — حي العليا',      lat: 24.6970, lng: 46.6873 },
+  { name: 'طريق الدائري الشمالي — حي النزهة', lat: 24.7500, lng: 46.6600 },
+  { name: 'حي الملقا — شمال الرياض',          lat: 24.7800, lng: 46.6400 },
+  { name: 'طريق الإمام سعود — وسط المدينة',   lat: 24.6800, lng: 46.7100 },
+  { name: 'طريق العليا — برج المملكة',         lat: 24.7115, lng: 46.6742 },
+  { name: 'حي المروج — الدائري الثالث',        lat: 24.7300, lng: 46.7200 },
+  { name: 'طريق الملك عبدالله — غرب الرياض',  lat: 24.6920, lng: 46.6300 },
+  { name: 'حي الياسمين — شمال شرق',            lat: 24.7650, lng: 46.7350 },
+  { name: 'حي الشفا — جنوب الرياض',            lat: 24.6300, lng: 46.7000 },
+  { name: 'مطار الملك خالد الدولي',             lat: 24.9576, lng: 46.6988 },
+  { name: 'طريق صلبوخ — شرق الرياض',          lat: 24.7000, lng: 46.8200 },
+  { name: 'حي الربوة — وسط الرياض',            lat: 24.6700, lng: 46.7300 },
+  { name: 'طريق الدائري الشرقي — المطار',      lat: 24.8000, lng: 46.7700 },
+  { name: 'حي الحمراء — غرب الرياض',           lat: 24.6500, lng: 46.6400 },
+];
+
+function globalHaversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+}
+
+const fmtTime = (h, m) => String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+
+function globalBuildWaypointTimeline(v, idx) {
+  const n = globalNid(v);
+  const numStops = 3 + (n % 4);
+  const timeline = [];
+  let curH = 6 + (n % 3);
+  let curM = (idx * 11) % 60;
+  let wpIdx = (n + idx) % globalWaypoints.length;
+
+  const startWp = globalWaypoints[wpIdx];
+  timeline.push({ type: 'depart', time: fmtTime(curH, curM), location: startWp.name, lat: startWp.lat, lng: startWp.lng, info: 'نقطة الانطلاق' });
+
+  for (let s = 0; s < numStops; s++) {
+    const driveMin = 25 + ((n + s * 7) % 55);
+    const endTotalMin = curH * 60 + curM + driveMin;
+    const arrH = Math.floor(endTotalMin / 60) % 24;
+    const arrM = endTotalMin % 60;
+
+    wpIdx = (wpIdx + 1 + s * 2) % globalWaypoints.length;
+    const destWp = globalWaypoints[wpIdx];
+    const prevWp = timeline[timeline.length - 1];
+    const distKm = globalHaversine(prevWp.lat, prevWp.lng, destWp.lat, destWp.lng);
+    const avgSpd = 45 + ((n + s * 3) % 35);
+    const maxSpd = 80 + ((n + s) % 50);
+
+    timeline.push({
+      type: 'arrive',
+      time: fmtTime(arrH, arrM),
+      location: destWp.name,
+      lat: destWp.lat,
+      lng: destWp.lng,
+      driveMin,
+      distKm,
+      avgSpd,
+      maxSpd,
+      info: `قطع ${distKm} كم في ${driveMin} د`
+    });
+
+    const stopMin = 5 + ((n + s * 5) % 50);
+    const depH = Math.floor((arrH * 60 + arrM + stopMin) / 60) % 24;
+    const depM = (arrH * 60 + arrM + stopMin) % 60;
+    timeline.push({
+      type: 'stop',
+      time: fmtTime(depH, depM),
+      location: destWp.name,
+      lat: destWp.lat,
+      lng: destWp.lng,
+      stopMin,
+      info: 'توقف'
+    });
+
+    curH = depH;
+    curM = depM;
+  }
+
+  const baseWp = globalWaypoints[(n) % globalWaypoints.length];
+  const returnMin = 20 + ((n * 3) % 40);
+  const retTotal = curH * 60 + curM + returnMin;
+  const retH = Math.floor(retTotal / 60) % 24;
+  const retM = retTotal % 60;
+  const lastWp = timeline[timeline.length - 1];
+  const retDist = globalHaversine(lastWp.lat, lastWp.lng, baseWp.lat, baseWp.lng);
+  timeline.push({
+    type: 'arrive',
+    time: fmtTime(retH, retM),
+    location: baseWp.name,
+    lat: baseWp.lat,
+    lng: baseWp.lng,
+    driveMin: returnMin,
+    distKm: retDist,
+    avgSpd: 50 + ((n * 2) % 30),
+    maxSpd: 90 + ((n) % 30),
+    info: `العودة — ${retDist} كم في ${returnMin} د`
+  });
+  timeline.push({ type: 'end', time: fmtTime(retH, retM), location: baseWp.name, lat: baseWp.lat, lng: baseWp.lng, info: 'انتهاء المشوار' });
+
+  return timeline;
+}
+
+// ── Sidebar ──
+function renderSharedSidebar() {
+  const stats = FleetData.getFleetStats();
+  const vehicles = FleetData.getVehicles();
+
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-logo"><div class="logo-icon">🚗</div><div class="logo-text"><h1>Fleet Track Pro</h1><span>نظام تتبع الأسطول</span></div></div>
+    <div class="fleet-status-mini">
+      <div class="status-badge moving"><span class="count">${stats.moving}</span>يتحرك</div>
+      <div class="status-badge stopped"><span class="count">${stats.stopped}</span>واقف</div>
+      <div class="status-badge idle"><span class="count">${stats.idle + stats.offline}</span>خامل</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">التتبع الحي</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🗺️</span> لوحة التحكم</a>
+      <div class="nav-section-title">الإدارة</div>
+      <a class="nav-item" href="vehicles.html"><span class="nav-icon">🚗</span> إدارة السيارات</a>
+      <a class="nav-item" href="drivers.html"><span class="nav-icon">👤</span> السائقون</a>
+      <div class="nav-section-title">التحليل</div>
+      <a class="nav-item" href="history.html"><span class="nav-icon">📍</span> تاريخ الرحلات</a>
+      <a class="nav-item active" href="reports.html"><span class="nav-icon">📊</span> التقارير</a>
+      <a class="nav-item" href="alerts.html"><span class="nav-icon">🔔</span> التنبيهات<span class="nav-badge" id="alert-nav-badge">${stats.alerts}</span></a>
+      <div class="nav-section-title">الإعدادات</div>
+      <a class="nav-item" href="geofence.html"><span class="nav-icon">🏁</span> مناطق الجيوفنس</a>
+      <a class="nav-item" href="account.html"><span class="nav-icon">👤</span> حسابي</a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-avatar">م</div><div class="user-info"><h4>مدير الأسطول</h4><span>متصل الآن</span></div></div></div>`;
+
+  // Populate vehicles custom multiselect
+  populateVehiclesMultiselect();
+}
+
+// ── Custom Multiselect helpers ──
+function toggleVehicleDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('multiselect-options').classList.toggle('active');
+}
+
+function populateVehiclesMultiselect() {
+  const vehicles = FleetData.getVehicles();
+  const list = document.getElementById('vehicles-checkbox-list');
+  if (!list) return;
+  list.innerHTML = vehicles.map(v => `
+    <label class="rpt-multiselect-option">
+      <input type="checkbox" class="vehicle-chk" value="${v.id}" data-name="${v.name}" onchange="updateVehicleSelectionLabel()">
+      <span>${v.name} — ${v.plate}</span>
+    </label>
+  `).join('');
+  updateVehicleSelectionLabel();
+}
+
+function toggleAllVehicles(checked) {
+  document.querySelectorAll('.vehicle-chk').forEach(c => {
+    c.checked = checked;
+  });
+  updateVehicleSelectionLabel();
+}
+
+function updateVehicleSelectionLabel() {
+  const chks = document.querySelectorAll('.vehicle-chk');
+  const checkedChks = document.querySelectorAll('.vehicle-chk:checked');
+  const label = document.getElementById('multiselect-label');
+  const masterChk = document.getElementById('chk-all-vehicles');
+  
+  if (checkedChks.length === chks.length) {
+    label.textContent = 'الجميع (All Vehicles)';
+    if (masterChk) masterChk.checked = true;
+  } else if (checkedChks.length === 0) {
+    label.textContent = 'Nothing selected / لم يتم اختيار أي سيارة';
+    if (masterChk) masterChk.checked = false;
+  } else if (checkedChks.length === 1) {
+    label.textContent = checkedChks[0].getAttribute('data-name');
+    if (masterChk) masterChk.checked = false;
+  } else {
+    label.textContent = `تم تحديد ${checkedChks.length} سيارات`;
+    if (masterChk) masterChk.checked = false;
+  }
+}
+
+// Close dropdown on click outside
+window.addEventListener('click', function(e) {
+  const opt = document.getElementById('multiselect-options');
+  const header = document.querySelector('.rpt-multiselect-header');
+  if (opt && opt.classList.contains('active') && !opt.contains(e.target) && !header.contains(e.target)) {
+    opt.classList.remove('active');
+  }
+});
+
+
+// ── Date helpers ──
+function updateDates() {
+  const period = document.getElementById('rf-period').value;
+  const today  = new Date();
+  let from = new Date(today);
+  if (period === 'today')     { from = new Date(today); }
+  else if (period === 'yesterday') { from.setDate(today.getDate() - 1); today.setDate(today.getDate() - 1); }
+  else if (period === 'week') { from.setDate(today.getDate() - 7); }
+  else if (period === 'month'){ from.setDate(today.getDate() - 30); }
+  document.getElementById('rf-from-date').value = from.toISOString().split('T')[0];
+  document.getElementById('rf-to-date').value   = new Date().toISOString().split('T')[0];
+  
+  // Set default hours and minutes
+  document.getElementById('rf-from-h').value = '00';
+  document.getElementById('rf-from-m').value = '00';
+  document.getElementById('rf-to-h').value = '23';
+  document.getElementById('rf-to-m').value = '45';
+}
+
+function adjustNum(id, delta) {
+  const el = document.getElementById(id);
+  el.value = Math.max(0, (parseInt(el.value) || 0) + delta);
+}
+
+// ── Generate ──
+function generateReport() {
+  const name = document.getElementById('rf-name').value.trim() || 'تقرير';
+  const fromDate = document.getElementById('rf-from-date').value || '–';
+  const fromTime = document.getElementById('rf-from-h').value + ':' + document.getElementById('rf-from-m').value;
+  const toDate = document.getElementById('rf-to-date').value || '–';
+  const toTime = document.getElementById('rf-to-h').value + ':' + document.getElementById('rf-to-m').value;
+
+  document.getElementById('result-title').textContent = '📊 ' + name;
+  document.getElementById('result-meta').textContent =
+    'من ' + fromDate + ' ' + fromTime + ' إلى ' + toDate + ' ' + toTime;
+
+  document.getElementById('config-view').style.display = 'none';
+  document.getElementById('result-view').classList.add('active');
+  
+  // Save record to Generated list
+  const typeVal = document.getElementById('rf-type').value;
+  const formatVal = document.getElementById('rf-format').value;
+  const checkedChks = document.querySelectorAll('.vehicle-chk:checked');
+  const vehiclesCount = checkedChks.length || FleetData.getVehicles().length;
+  const zonesCount = document.getElementById('rf-zone').selectedIndex > 0 ? 1 : 0;
+  const sensorsCount = typeVal.includes('sensor') || typeVal.includes('temp_humidity') ? 2 : 0;
+  const isScheduled = document.getElementById('rf-daily').checked || document.getElementById('rf-weekly').checked;
+  const typeText = document.querySelector(`#rf-type option[value="${typeVal}"]`)?.textContent || 'تقرير مخصص';
+  const formatText = formatVal.split(' ')[0];
+  
+  saveGeneratedReportRecord(name, typeText, formatText, vehiclesCount, zonesCount, sensorsCount, isScheduled);
+
+  const excelBtn = document.getElementById('topbar-export-excel');
+  const pdfBtn = document.getElementById('topbar-export-pdf');
+  if (excelBtn) excelBtn.style.display = 'inline-flex';
+  if (pdfBtn) pdfBtn.style.display = 'inline-flex';
+
+  renderReports();
+}
+
+function backToConfig() {
+  document.getElementById('result-view').classList.remove('active');
+  document.getElementById('config-view').style.display = 'block';
+
+  // Hide topbar export buttons
+  const excelBtn = document.getElementById('topbar-export-excel');
+  const pdfBtn = document.getElementById('topbar-export-pdf');
+  if (excelBtn) excelBtn.style.display = 'none';
+  if (pdfBtn) pdfBtn.style.display = 'none';
+}
+
+function clearForm() {
+  document.getElementById('rf-name').value = '';
+  toggleAllVehicles(false); // Reset checkboxes in multiselect
+  document.getElementById('rf-type').selectedIndex = 0;
+  document.getElementById('rf-format').selectedIndex = 0;
+  document.getElementById('rf-stop').value = '1';
+  document.getElementById('rf-speed').value = '100';
+  document.getElementById('rf-daily').checked = false;
+  document.getElementById('rf-weekly').checked = false;
+  document.getElementById('rf-email').value = '';
+  updateDates();
+}
+
+// ── Generated Archive list storage and toggling ──
+if (!localStorage.getItem('fleet_generated_reports')) {
+  const mockReports = [
+    { id: 'gen_1', time: '2026-06-04 17:11:47', name: 'سيوز', type: 'تحرك و توقف', format: 'XLS', vehicles: 1, zones: 0, sensors: 0, schedule: false },
+    { id: 'gen_2', time: '2026-06-04 17:10:25', name: 'سيوز', type: 'تحرك و توقف', format: 'XLS', vehicles: 1, zones: 0, sensors: 0, schedule: false },
+    { id: 'gen_3', time: '2026-06-04 17:10:06', name: 'سيوز', type: 'تحرك و توقف', format: 'XLS', vehicles: 14, zones: 0, sensors: 0, schedule: false },
+    { id: 'gen_4', time: '2026-06-03 10:31:20', name: '520', type: 'منطقة داخل / خارج', format: 'XLS', vehicles: 14, zones: 20, sensors: 0, schedule: false },
+    { id: 'gen_5', time: '2026-06-03 10:30:56', name: '520', type: 'تحرك و توقف', format: 'XLS', vehicles: 14, zones: 0, sensors: 0, schedule: false },
+    { id: 'gen_6', time: '2026-06-02 09:16:13', name: 'لارو', type: 'منطقة داخل / خارج', format: 'XLS', vehicles: 14, zones: 20, sensors: 0, schedule: false },
+    { id: 'gen_7', time: '2026-06-02 09:14:06', name: 'لارو', type: 'تحرك و توقف', format: 'XLS', vehicles: 14, zones: 0, sensors: 0, schedule: false }
+  ];
+  localStorage.setItem('fleet_generated_reports', JSON.stringify(mockReports));
+}
+
+function saveGeneratedReportRecord(name, type, format, vehiclesCount, zonesCount, sensorsCount, isScheduled) {
+  const reports = JSON.parse(localStorage.getItem('fleet_generated_reports') || '[]');
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + 
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(now.getDate()).padStart(2, '0') + ' ' + 
+                  String(now.getHours()).padStart(2, '0') + ':' + 
+                  String(now.getMinutes()).padStart(2, '0') + ':' + 
+                  String(now.getSeconds()).padStart(2, '0');
+                  
+  reports.unshift({
+    id: 'gen_' + Date.now(),
+    time: dateStr,
+    name: name,
+    type: type,
+    format: format,
+    vehicles: vehiclesCount,
+    zones: zonesCount,
+    sensors: sensorsCount,
+    schedule: isScheduled
+  });
+  localStorage.setItem('fleet_generated_reports', JSON.stringify(reports));
+}
+
+function showReportTab(tab) {
+  const configBody = document.getElementById('config-body-view');
+  const configFooter = document.getElementById('config-footer-view');
+  const generatedView = document.getElementById('generated-list-view');
+  const tabConfig = document.getElementById('tab-config');
+  const tabGenerated = document.getElementById('tab-generated');
+
+  if (tab === 'config') {
+    configBody.style.display = 'grid';
+    configFooter.style.display = 'flex';
+    generatedView.style.display = 'none';
+    tabConfig.classList.add('active');
+    tabGenerated.classList.remove('active');
+  } else {
+    configBody.style.display = 'none';
+    configFooter.style.display = 'none';
+    generatedView.style.display = 'block';
+    tabGenerated.classList.add('active');
+    tabConfig.classList.remove('active');
+    renderGeneratedReportsList();
+  }
+}
+
+function getExcelHtmlContent(r) {
+  const allVehicles = FleetData.getVehicles();
+  const vehiclesToExport = r.vehicles === 1 ? [allVehicles[0]] : allVehicles;
+  let reportBody = '';
+  const typeLower = String(r.type).toLowerCase();
+
+  // Drives & Stops
+  if (typeLower.includes('تحرك') || typeLower.includes('توقف') || typeLower.includes('drive') || typeLower.includes('stop') || typeLower.includes('travel') || typeLower.includes('سفر') || typeLower.includes('mileage') || typeLower.includes('working') || typeLower.includes('hour')) {
+    const totalDist = vehiclesToExport.reduce((sum, v, vi) => {
+      const timeline = globalBuildWaypointTimeline(v, vi);
+      return sum + timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+parseFloat(e.distKm||0),0);
+    }, 0).toFixed(1);
+    
+    const totalDrv = vehiclesToExport.reduce((sum, v, vi) => {
+      const timeline = globalBuildWaypointTimeline(v, vi);
+      return sum + timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+(e.driveMin||0),0);
+    }, 0);
+    
+    const totalStp = vehiclesToExport.reduce((sum, v, vi) => {
+      const timeline = globalBuildWaypointTimeline(v, vi);
+      return sum + timeline.filter(e=>e.type==='stop').reduce((s,e)=>s+(e.stopMin||0),0);
+    }, 0);
+
+    const stopsCount = vehiclesToExport.reduce((sum, v, vi) => {
+      const timeline = globalBuildWaypointTimeline(v, vi);
+      return sum + timeline.filter(e=>e.type==='stop').length;
+    }, 0);
+
+    reportBody += `
+    <div class="kpi-grid">
+      <div class="kpi-card"><span class="kpi-icon">📏</span><div class="kpi-val">${totalDist} كم</div><div class="kpi-lbl">إجمالي المسافة</div></div>
+      <div class="kpi-card"><span class="kpi-icon">⏱️</span><div class="kpi-val">${totalDrv} دقيقة</div><div class="kpi-lbl">إجمالي القيادة</div></div>
+      <div class="kpi-card"><span class="kpi-icon">🛑</span><div class="kpi-val">${totalStp} دقيقة</div><div class="kpi-lbl">إجمالي التوقف</div></div>
+      <div class="kpi-card"><span class="kpi-icon">🏁</span><div class="kpi-val">${stopsCount}</div><div class="kpi-lbl">توقف الأسطول</div></div>
+    </div>
+    <h3>تفاصيل الرحلات والتوقفات للأسطول</h3>`;
+
+    vehiclesToExport.forEach((v, vi) => {
+      const timeline = globalBuildWaypointTimeline(v, vi);
+      const d = FleetData.getDriverByVehicle(v.id);
+      
+      const vDist = timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+parseFloat(e.distKm||0),0).toFixed(1);
+      const vDrv = timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+(e.driveMin||0),0);
+      const vStp = timeline.filter(e=>e.type==='stop').reduce((s,e)=>s+(e.stopMin||0),0);
+
+      reportBody += `
+      <h4 style="margin-top:25px;color:#60a5fa">🚗 المركبة: ${v.name} (اللوحة: ${v.plate}) - السائق: ${d ? d.name : '—'}</h4>
+      <div style="font-size:11px;color:#8892a4;margin-bottom:8px">ملخص الرحلة: مسافة ${vDist} كم | مدة قيادة ${vDrv} دقيقة | توقف ${vStp} دقيقة</div>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>الحدث</th>
+            <th>الوقت</th>
+            <th>الموقع (الخريطة)</th>
+            <th>المسافة</th>
+            <th>مدة القيادة</th>
+            <th>متوسط السرعة</th>
+            <th>أقصى سرعة</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${timeline.map(e => {
+            const eventName = e.type === 'depart' ? 'انطلاق' : e.type === 'arrive' ? 'وصول' : e.type === 'stop' ? 'توقف' : 'انتهاء المشوار';
+            const distance = e.distKm ? parseFloat(e.distKm).toFixed(1) + ' كم' : '—';
+            const driveTime = e.driveMin ? e.driveMin + ' دقيقة' : '—';
+            const avgSpeed = e.avgSpd ? e.avgSpd + ' كم/س' : '—';
+            const maxSpeed = e.maxSpd ? e.maxSpd + ' كم/س' : '—';
+            
+            if (e.type === 'stop') {
+              return `
+                <tr style="background-color:rgba(239,68,68,0.1);color:#ef4444">
+                  <td><b>🛑 ${eventName}</b></td>
+                  <td style="color:#ef4444">${e.time}</td>
+                  <td style="color:#ef4444">📍 ${e.location}</td>
+                  <td colspan="4" style="color:#ef4444">توقف لمدة ${e.stopMin} دقيقة (${e.info || 'توقف مجدول'})</td>
+                </tr>
+              `;
+            }
+            if (e.type === 'depart') {
+              return `
+                <tr style="background-color:rgba(34,197,94,0.1);color:#22c55e">
+                  <td><b>🏁 ${eventName}</b></td>
+                  <td>${e.time}</td>
+                  <td colspan="2">📍 ${e.location}</td>
+                  <td colspan="3">—</td>
+                </tr>
+              `;
+            }
+            return `
+              <tr>
+                <td><b>🚗 ${eventName}</b></td>
+                <td>${e.time}</td>
+                <td>📍 ${e.location}</td>
+                <td>${distance}</td>
+                <td>${driveTime}</td>
+                <td>${avgSpeed}</td>
+                <td style="color:${e.maxSpd>100?'#ef4444':'#f0f4ff'}">${maxSpeed}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>`;
+    });
+
+  // General Info
+  } else if (typeLower.includes('عامة') || typeLower.includes('معلومات') || typeLower.includes('general') || typeLower.includes('info') || typeLower.includes('pos') || typeLower.includes('object')) {
+    const monthlyStats = FleetData.getMonthlyStats();
+    const totalKm = vehiclesToExport.reduce((s,v) => s + (monthlyStats[v.id]?.km || 0), 0);
+    const totalFuel = vehiclesToExport.reduce((s,v) => s + (monthlyStats[v.id]?.fuel || 0), 0);
+    const totalTrips = vehiclesToExport.reduce((s,v) => s + (monthlyStats[v.id]?.trips || 0), 0);
+    const avgEff = totalFuel > 0 ? (totalKm / totalFuel).toFixed(1) : '—';
+
+    reportBody += `
+    <div class="kpi-grid">
+      <div class="kpi-card"><span class="kpi-icon">📏</span><div class="kpi-val">${totalKm.toFixed(0)} كم</div><div class="kpi-lbl">إجمالي المسافة</div></div>
+      <div class="kpi-card"><span class="kpi-icon">⛽</span><div class="kpi-val">${totalFuel.toFixed(0)} لتر</div><div class="kpi-lbl">استهلاك الوقود</div></div>
+      <div class="kpi-card"><span class="kpi-icon">🔄</span><div class="kpi-val">${totalTrips}</div><div class="kpi-lbl">إجمالي الرحلات</div></div>
+      <div class="kpi-card"><span class="kpi-icon">💡</span><div class="kpi-val">${avgEff} كم/لتر</div><div class="kpi-lbl">كفاءة الوقود</div></div>
+    </div>
+    <h3>ملخص أداء المركبات - معلومات عامة</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المركبة</th>
+          <th>اللوحة</th>
+          <th>السائق</th>
+          <th>الرحلات</th>
+          <th>إجمالي كم</th>
+          <th>الوقود (ل)</th>
+          <th>كفاءة الوقود</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${vehiclesToExport.map((v, idx) => {
+          const ms = monthlyStats[v.id] || { km: 0, fuel: 0, trips: 0 };
+          const d = FleetData.getDriverByVehicle(v.id);
+          const eff = ms.fuel > 0 ? (ms.km / ms.fuel).toFixed(1) + ' كم/ل' : '—';
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><b>${v.name}</b></td>
+              <td style="color:#60a5fa">${v.plate}</td>
+              <td>${d ? d.name : '—'}</td>
+              <td>${ms.trips}</td>
+              <td style="font-weight:700">${ms.km.toFixed(1)} كم</td>
+              <td>${ms.fuel.toFixed(1)} لتر</td>
+              <td style="font-weight:700;color:#22c55e">${eff}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // Speed Violations
+  } else if (typeLower.includes('سرعة') || typeLower.includes('speed')) {
+    const limit = 100;
+    const speedEvents = vehiclesToExport.flatMap((v, vi) => {
+      const nEv = 2 + (v.id % 5);
+      return Array.from({ length: nEv }, (_, ei) => ({
+        v,
+        time: `${7 + (v.id + ei) % 15}:${String((ei * 17 + v.id * 3) % 60).padStart(2, '0')}`,
+        recorded: limit + 5 + ((v.id * 3 + ei * 7) % 40),
+        loc: globalLoc(v.id + vi),
+        dur: 15 + ((v.id + vi * 5) % 120)
+      }));
+    });
+
+    const maxSpeed = Math.max(...speedEvents.map(e => e.recorded));
+    const totalViolations = speedEvents.length;
+
+    reportBody += `
+    <div class="kpi-grid">
+      <div class="kpi-card"><span class="kpi-icon">⚠️</span><div class="kpi-val">${totalViolations}</div><div class="kpi-lbl">إجمالي التجاوزات</div></div>
+      <div class="kpi-card"><span class="kpi-icon">⚡</span><div class="kpi-val">${maxSpeed} كم/س</div><div class="kpi-lbl">أقصى سرعة مسجلة</div></div>
+      <div class="kpi-card"><span class="kpi-icon">📏</span><div class="kpi-val">${limit} كم/س</div><div class="kpi-lbl">الحد الأقصى للسرعة</div></div>
+    </div>
+    <h3>سجل أحداث تجاوز السرعة للأسطول</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>المركبة</th>
+          <th>السائق</th>
+          <th>التاريخ والوقت</th>
+          <th>السرعة المسجلة</th>
+          <th>الحد المسموح</th>
+          <th>الفارق</th>
+          <th>مدة الحدث (ث)</th>
+          <th>الموقع</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${speedEvents.map(e => {
+          const d = FleetData.getDriverByVehicle(e.v.id);
+          return `
+            <tr>
+              <td><b>${e.v.name}</b></td>
+              <td>${d ? d.name : '—'}</td>
+              <td>${r.time.split(' ')[0]} ${e.time}</td>
+              <td style="color:#ef4444;font-weight:700">${e.recorded} كم/س</td>
+              <td>${limit} كم/س</td>
+              <td style="color:#ef4444">+${e.recorded - limit} كم/س</td>
+              <td>${e.dur} ثانية</td>
+              <td>📍 ${e.loc}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // Geofence Events
+  } else if (typeLower.includes('منطقة') || typeLower.includes('جيوفنس') || typeLower.includes('geofence') || typeLower.includes('zone')) {
+    const geoEvents = vehiclesToExport.flatMap((v, vi) => {
+      const nEv = 1 + (v.id % 3);
+      return Array.from({ length: nEv }, (_, ei) => {
+        const inH = 8 + (v.id + ei) % 8;
+        const inM = (ei * 19 + v.id * 7) % 60;
+        const stayMin = 30 + ((v.id * 11 + ei * 13) % 180);
+        const outTotal = inH * 60 + inM + stayMin;
+        const outH = Math.floor(outTotal / 60) % 24;
+        const outM = outTotal % 60;
+        return {
+          v,
+          zone: ['المنطقة الصناعية', 'فرع العليا', 'مستودع السلي', 'مكتب الإدارة'][ei % 4],
+          inTime: `${String(inH).padStart(2, '0')}:${String(inM).padStart(2, '0')}`,
+          outTime: `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`,
+          dur: `${Math.floor(stayMin / 60)} س ${stayMin % 60} د`,
+          status: (v.id + ei) % 4 === 0 ? 'تنبيه سرعة داخل المنطقة' : 'ناجح'
+        };
+      });
+    });
+
+    const totalEntries = geoEvents.length;
+    const alertEntries = geoEvents.filter(e => e.status !== 'ناجح').length;
+
+    reportBody += `
+    <div class="kpi-grid">
+      <div class="kpi-card"><span class="kpi-icon">🏁</span><div class="kpi-val">${totalEntries}</div><div class="kpi-lbl">إجمالي الحركات داخل المناطق</div></div>
+      <div class="kpi-card"><span class="kpi-icon">🔔</span><div class="kpi-val" style="color:#ef4444">${alertEntries}</div><div class="kpi-lbl">التنبيهات المسجلة</div></div>
+    </div>
+    <h3>سجل أحداث دخول وخروج المناطق (Geofence)</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>المركبة</th>
+          <th>السائق</th>
+          <th>المنطقة / الفرع</th>
+          <th>وقت الدخول</th>
+          <th>وقت الخروج</th>
+          <th>مدة البقاء</th>
+          <th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${geoEvents.map(e => {
+          const d = FleetData.getDriverByVehicle(e.v.id);
+          const alertColor = e.status !== 'ناجح' ? '#ef4444' : '#22c55e';
+          return `
+            <tr>
+              <td><b>${e.v.name}</b></td>
+              <td>${d ? d.name : '—'}</td>
+              <td>📍 ${e.zone}</td>
+              <td>${e.inTime}</td>
+              <td>${e.outTime}</td>
+              <td>${e.dur}</td>
+              <td style="color:${alertColor};font-weight:700">${e.status}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // Fallback / Other custom reports
+  } else {
+    const sensorData = vehiclesToExport.map((v,vi) => ({v, val:(18+(v.id*3+vi)%30).toFixed(1)}));
+    
+    reportBody += `
+    <div class="kpi-grid">
+      <div class="kpi-card"><span class="kpi-icon">📊</span><div class="kpi-val">${sensorData.length} مركبة</div><div class="kpi-lbl">المركبات المفحوصة</div></div>
+      <div class="kpi-card"><span class="kpi-icon">🌡️</span><div class="kpi-val">${sensorData[0]?.val||'—'}</div><div class="kpi-lbl">أول قراءة مسجلة</div></div>
+    </div>
+    <h3>بيانات تفصيلية — تقرير المركبات</h3>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المركبة</th>
+          <th>القراءة المسجلة</th>
+          <th>الحالة</th>
+          <th>الموقع</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sensorData.map((s, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><b>${s.v.name}</b></td>
+            <td style="color:#60a5fa;font-weight:700">${s.val}</td>
+            <td style="color:#22c55e">طبيعي</td>
+            <td>📍 ${globalLoc(s.v.id)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  const excelHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  <head>
+    <meta charset="utf-8">
+    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+    <style>
+      body { font-family: 'Cairo', 'Arial', sans-serif; direction: rtl; background-color: #0a0e1a; color: #f0f4ff; padding: 24px; }
+      h2, h3, h4 { color: #60a5fa; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 25px; background-color: #131929; border: 1px solid rgba(255,255,255,0.07); }
+      th { background-color: #0f1628; color: #60a5fa; padding: 10px; font-weight: bold; text-align: right; border: 1px solid rgba(255,255,255,0.07); }
+      td { padding: 8px 10px; border: 1px solid rgba(255,255,255,0.07); text-align: right; color: #f0f4ff; }
+      tr:nth-child(even) td { background-color: #0f1628; }
+      
+      /* KPI Cards styling matching the dashboard */
+      .kpi-grid { display: flex; gap: 16px; margin-bottom: 24px; }
+      .kpi-card { background: #131929; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 16px; flex: 1; min-width: 160px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+      .kpi-val { font-size: 22px; font-weight: 800; color: #f0f4ff; margin-top: 4px; }
+      .kpi-lbl { font-size: 11px; color: #8892a4; margin-top: 2px; }
+      .kpi-icon { font-size: 24px; float: left; }
+    </style>
+  </head>
+  <body>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #3b82f6;padding-bottom:12px;margin-bottom:24px">
+      <div>
+        <h1 style="color:#3b82f6;font-size:24px;margin:0;font-weight:900">Fleet Track Pro</h1>
+        <div style="color:#8892a4;font-size:12px;margin-top:4px">نظام تتبع وإدارة الأسطول الذكي</div>
+      </div>
+      <div style="text-align:left;color:#8892a4;font-size:11px">
+        <div>نوع التقرير الأصلي: ${r.type}</div>
+        <div>وقت التوليد: ${r.time}</div>
+      </div>
+    </div>
+    <h2>${r.name || 'تقرير مخصص'}</h2>
+    
+    <table border="1" style="margin-bottom:30px">
+      <thead>
+        <tr><th colspan="2" style="background-color:#0f1628;color:#60a5fa">خصائص وتفاصيل التقرير</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>اسم التقرير</b></td><td>${r.name || '—'}</td></tr>
+        <tr><td><b>وقت التوليد</b></td><td>${r.time}</td></tr>
+        <tr><td><b>نوع التقرير</b></td><td>${r.type}</td></tr>
+        <tr><td><b>المركبات المشمولة</b></td><td>${r.vehicles} مركبة</td></tr>
+        <tr><td><b>المناطق/الفروع المحددة</b></td><td>${r.zones} منطقة</td></tr>
+        <tr><td><b>الحساسات المفحوصة</b></td><td>${r.sensors} حساسة</td></tr>
+        <tr><td><b>حالة الجدولة التلقائية</b></td><td>${r.schedule ? 'نشط (مجدول)' : 'غير مجدول'}</td></tr>
+      </tbody>
+    </table>
+    
+    ${reportBody}
+  </body>
+  </html>`;
+
+  return excelHtml;
+}
+
+function getPdfContent(r) {
+  const cleanName = String(r.name).replace(/[^\x00-\x7F]/g, '') || 'Report';
+  const cleanType = String(r.type).replace(/[^\x00-\x7F]/g, '') || 'Custom Report';
+  const typeLower = String(r.type).toLowerCase();
+  if (typeLower.includes('تحرك') || typeLower.includes('توقف') || typeLower.includes('drive') || typeLower.includes('stop') || typeLower.includes('travel') || typeLower.includes('سفر') || typeLower.includes('mileage') || typeLower.includes('working') || typeLower.includes('hour')) {
+    detailLines = `0 -20 Td
+(Timeline Summary:) Tj
+0 -15 Td
+(- Depart: Riyadh Depot at 07:00) Tj
+0 -15 Td
+(- Arrive: King Fahd Rd at 07:26 (6.5 km)) Tj
+0 -15 Td
+(- Stop: King Fahd Rd (6 min)) Tj
+0 -15 Td
+(- Arrive: Olaya Street at 08:05 (4.5 km)) Tj
+0 -15 Td
+(- Stop: Olaya Street (11 min)) Tj
+0 -15 Td
+(- Arrive: Riyadh Depot at 10:20 (27.5 km)) Tj`;
+  } else {
+    detailLines = `0 -20 Td
+(Fleet Summary Statistics:) Tj
+0 -15 Td
+(- Total Fleet Distance: 4813.0 km) Tj
+0 -15 Td
+(- Total Fuel Consumed: 482.0 Liters) Tj
+0 -15 Td
+(- Active Vehicles: 14) Tj`;
+  }
+
+  const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 400 >>
+stream
+BT
+/F1 18 Tf
+50 750 Td
+(Fleet Track Pro - Report Document) Tj
+/F1 12 Tf
+0 -40 Td
+(Report Name: ${cleanName}) Tj
+0 -20 Td
+(Generated Time: ${r.time}) Tj
+0 -20 Td
+(Report Type: ${cleanType}) Tj
+0 -20 Td
+(Format: PDF Document) Tj
+0 -20 Td
+(Vehicles Count: ${r.vehicles}) Tj
+0 -20 Td
+(Zones Count: ${r.zones}) Tj
+0 -20 Td
+(Status: Verified & Completed) Tj
+${detailLines}
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000244 00000 n 
+0000000694 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+787
+%%EOF`;
+
+  return pdfContent;
+}
+
+function downloadFileViaServer(filename, content, isBase64 = false) {
+  const payload = {
+    filename: filename,
+    content: content,
+    base64: isBase64
+  };
+  
+  fetch('/download-report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Server error: ' + response.status);
+    return response.blob();
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 100);
+  })
+  .catch(error => {
+    console.error('Download failed:', error);
+    alert('حدث خطأ أثناء تنزيل الملف: ' + error.message);
+  });
+}
+
+function triggerExcelDownload(id) {
+  const reports = JSON.parse(localStorage.getItem('fleet_generated_reports') || '[]');
+  const r = id === 'latest' ? reports[0] : reports.find(item => item.id === id);
+  if (!r) return;
+  const excelHtml = getExcelHtmlContent(r);
+  const filename = `${r.name || 'report'}.xls`;
+  downloadFileViaServer(filename, excelHtml, false);
+}
+
+function triggerPdfDownload(id) {
+  const reports = JSON.parse(localStorage.getItem('fleet_generated_reports') || '[]');
+  const r = id === 'latest' ? reports[0] : reports.find(item => item.id === id);
+  if (!r) return;
+
+  // Create temporary container styled with the dark-blue theme
+  const container = document.createElement('div');
+  container.dir = 'rtl';
+  container.setAttribute('lang', 'ar');
+  container.style.fontFamily = "'Cairo', 'Arial', sans-serif";
+  container.style.padding = '24px';
+  container.style.backgroundColor = '#0a0e1a';
+  container.style.color = '#f0f4ff';
+
+  // Get the report content HTML
+  const excelHtml = getExcelHtmlContent(r);
+  
+  // Extract only the body content
+  let reportHtml = excelHtml;
+  const bodyStartIdx = excelHtml.indexOf('<body>');
+  const bodyEndIdx = excelHtml.indexOf('</body>');
+  if (bodyStartIdx !== -1 && bodyEndIdx !== -1) {
+    reportHtml = excelHtml.substring(bodyStartIdx + 6, bodyEndIdx);
+  }
+
+  container.innerHTML = reportHtml;
+
+  // Append strict dark-theme printing stylesheets
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+    body, div, table, tr, td, th, h1, h2, h3, h4 {
+      font-family: 'Cairo', 'Arial', sans-serif !important;
+      letter-spacing: normal !important;
+      word-spacing: normal !important;
+      text-rendering: optimizeLegibility !important;
+      font-variant-ligatures: common-ligatures !important;
+    }
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      margin-top: 10px !important;
+      margin-bottom: 20px !important;
+      font-size: 10px !important;
+      background-color: #131929 !important;
+      border: 1px solid rgba(255,255,255,0.07) !important;
+      page-break-inside: auto !important;
+    }
+    tr {
+      page-break-inside: avoid !important;
+      page-break-after: auto !important;
+    }
+    thead {
+      display: table-header-group !important;
+    }
+    th {
+      background-color: #0f1628 !important;
+      color: #60a5fa !important;
+      font-weight: 700 !important;
+      padding: 8px 10px !important;
+      text-align: right !important;
+      border: 1px solid rgba(255,255,255,0.07) !important;
+      font-size: 10px !important;
+    }
+    td {
+      padding: 6px 10px !important;
+      border: 1px solid rgba(255,255,255,0.07) !important;
+      text-align: right !important;
+      color: #f0f4ff !important;
+    }
+    tr:nth-child(even) td {
+      background-color: #0f1628 !important;
+    }
+    
+    /* KPI Cards */
+    .kpi-grid { display: flex !important; gap: 16px !important; margin-bottom: 24px !important; }
+    .kpi-card { background: #131929 !important; border: 1px solid rgba(255,255,255,0.07) !important; border-radius: 12px !important; padding: 16px !important; flex: 1 !important; min-width: 120px !important; }
+    .kpi-val { font-size: 18px !important; font-weight: 800 !important; color: #f0f4ff !important; margin-top: 4px !important; }
+    .kpi-lbl { font-size: 10px !important; color: #8892a4 !important; margin-top: 2px !important; }
+    .kpi-icon { font-size: 20px !important; float: left !important; }
+  `;
+  container.appendChild(style);
+
+  // Configure pdf download settings
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     `${r.name || 'report'}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2.5, useCORS: true, letterRendering: false, backgroundColor: '#0a0e1a' },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  // Run html2pdf download via server to ensure correct headers and Arabic filename extension
+  html2pdf().from(container).set(opt).outputPdf('datauristring').then(function(pdfDataUri) {
+    const base64String = pdfDataUri.split(',')[1];
+    const filename = `${r.name || 'report'}.pdf`;
+    downloadFileViaServer(filename, base64String, true);
+  }).catch(function(err) {
+    console.error("PDF Generation Error:", err);
+    alert("حدث خطأ أثناء توليد ملف PDF: " + err.message);
+  });
+}
+
+function clearCacheAndReload() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+  if (window.caches) {
+    caches.keys().then(function(names) {
+      for (let name of names) {
+        caches.delete(name);
+      }
+    });
+  }
+  setTimeout(function() {
+    window.location.reload(true);
+  }, 200);
+}
+
+function renderGeneratedReportsList() {
+  const tbody = document.getElementById('generated-reports-tbody');
+  if (!tbody) return;
+  const reports = JSON.parse(localStorage.getItem('fleet_generated_reports') || '[]');
+  
+  if (reports.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:30px">لا توجد تقارير منجزة حالياً</td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = reports.map((r, i) => {
+    const formatColor = r.format === 'XLS' ? '#10b981' : r.format === 'PDF' ? '#ef4444' : r.format === 'CSV' ? '#f59e0b' : '#3b82f6';
+    return `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+        <td style="padding:10px 12px"><input type="checkbox" class="gen-report-chk" value="${r.id}" style="cursor:pointer"></td>
+        <td style="padding:10px 12px;font-weight:700;color:var(--text-primary)">${r.time}</td>
+        <td style="padding:10px 12px"><b>${r.name || '—'}</b></td>
+        <td style="padding:10px 12px;color:var(--accent-light)">${r.type}</td>
+        <td style="padding:10px 12px"><span style="font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;background:${formatColor}22;color:${formatColor}">${r.format}</span></td>
+        <td style="padding:10px 12px">${r.vehicles}</td>
+        <td style="padding:10px 12px">${r.zones}</td>
+        <td style="padding:10px 12px">${r.sensors}</td>
+        <td style="padding:10px 12px">${r.schedule ? '<span style="color:var(--green)">✅ نعم</span>' : '<span style="color:var(--text-muted)">❌ لا</span>'}</td>
+        <td style="padding:10px 12px;text-align:center">
+          <div style="display:flex;gap:12px;justify-content:center;align-items:center">
+            <button onclick="triggerExcelDownload('${r.id}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:15px;padding:0;line-height:1" title="تنزيل Excel (XLS)">📊</button>
+            <button onclick="triggerPdfDownload('${r.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:15px;padding:0;line-height:1" title="تنزيل PDF">📄</button>
+            <button onclick="deleteGeneratedReport('${r.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0;line-height:1" title="حذف">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function deleteGeneratedReport(id) {
+  let reports = JSON.parse(localStorage.getItem('fleet_generated_reports') || '[]');
+  reports = reports.filter(r => r.id !== id);
+  localStorage.setItem('fleet_generated_reports', JSON.stringify(reports));
+  renderGeneratedReportsList();
+}
+
+function clearAllGeneratedReports() {
+  if (confirm('هل أنت متأكد من مسح جميع التقارير المؤرشفة؟')) {
+    localStorage.setItem('fleet_generated_reports', JSON.stringify([]));
+    renderGeneratedReportsList();
+  }
+}
+
+function toggleSelectAllGenerated(checked) {
+  document.querySelectorAll('.gen-report-chk').forEach(c => {
+    c.checked = checked;
+  });
+}
+
+// ── Charts ──
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderReports() {
+  const type = document.getElementById('rf-type').value;
+  const area = document.getElementById('dynamic-result-area');
+  const allVehicles = FleetData.getVehicles();
+
+  // Read checked vehicles
+  const checkedChks = document.querySelectorAll('.vehicle-chk:checked');
+  const selectedVehicleIds = [...checkedChks].map(c => c.value);
+  let vehicles = allVehicles;
+  if (selectedVehicleIds.length > 0) {
+    vehicles = allVehicles.filter(v => selectedVehicleIds.includes(String(v.id)));
+  }
+
+  // Normalize vehicle IDs to numbers for safe arithmetic (some systems use string IDs like 'v001')
+  vehicles = vehicles.map((v, vi) => {
+    let numId = v.id;
+    if (typeof numId !== 'number' || isNaN(numId)) {
+      const digits = String(v.id).replace(/\D/g, '');
+      numId = digits.length > 0 ? (parseInt(digits, 10) || (vi + 1)) : (vi + 1);
+    }
+    return { ...v, id: numId, rawId: v.id };
+  });
+
+
+  const monthlyStats = FleetData.getMonthlyStats();
+  const dailyData    = FleetData.getDailyKmChart();
+  const fleetStats   = FleetData.getFleetStats();
+
+  // Clear previous charts
+  Object.keys(charts).forEach(destroyChart);
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const statusLabels = { moving:'يتحرك', stopped:'واقف', idle:'خامل', offline:'غير متصل' };
+  const statusColors = { moving:'var(--green)', stopped:'var(--red)', idle:'var(--yellow)', offline:'var(--text-muted)' };
+  const badge = (txt, col) => `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;background:${col}22;color:${col}">${txt}</span>`;
+  const kpi   = (icon,val,lbl,cls) => `<div class="kpi-card ${cls}"><div class="kpi-icon">${icon}</div><div class="kpi-value">${val}</div><div class="kpi-label">${lbl}</div></div>`;
+
+  // Convert vehicle id (may be string like 'v001') to a stable positive integer for modular arithmetic
+  const nid = v => {
+    const id = v.id;
+    if (typeof id === 'number') return Math.abs(id) || 1;
+    // Parse numeric digits from string id, or use char codes sum
+    const digits = String(id).replace(/\D/g, '');
+    if (digits.length > 0) return parseInt(digits, 10) || 1;
+    return String(id).split('').reduce((s, c) => s + c.charCodeAt(0), 0) || 1;
+  };
+
+  // Fake locations in Riyadh
+  const locations = [
+    'طريق الملك فهد، الرياض','طريق العليا، الرياض','حي المروج، الرياض',
+    'طريق الإمام سعود، الرياض','حي النزهة، الرياض','طريق الدائري الثالث',
+    'حي الياسمين، الرياض','طريق الملك عبدالله، الرياض','حي الربوة، الرياض',
+    'طريق صلبوخ، الرياض','حي الشفا، الرياض','حي الملقا، الرياض'
+  ];
+  const loc = i => locations[Math.abs(i) % locations.length];
+
+  // ── Date from form ────────────────────────────────────────────────────────
+  const fromDate = document.getElementById('rf-from-date').value || '2026-07-07';
+  const toDate   = document.getElementById('rf-to-date').value   || '2026-07-14';
+
+  // Build a per-vehicle trip list (3-6 trips each)
+  function buildTrips(v, idx) {
+    const n = nid(v);
+    const nTrips = 3 + (n % 4);
+    const trips  = [];
+    let curH = 6 + (n % 3);
+    for (let t = 0; t < nTrips; t++) {
+      const startH = curH;
+      const startM = (idx * 7 + t * 11) % 60;
+      const durMin = 25 + ((n + t * 5) % 55);
+      const endTotalMin = startH * 60 + startM + durMin;
+      const endH = Math.floor(endTotalMin / 60);
+      const endM = endTotalMin % 60;
+
+      const km = (8 + ((n * 3 + t * 7) % 42)).toFixed(1);
+      const maxSpd = 80 + ((n + t) % 50);
+      const avgSpd = 45 + ((n + t * 2) % 35);
+      const stopDur = 5 + ((n + t) % 30);
+      trips.push({ startH, startM, endH, endM, durMin, stopDur, km, maxSpd, avgSpd,
+                   fromLoc: loc(n + t), toLoc: loc(n + t + 3) });
+
+      curH = endH + 1 + (t % 2);
+    }
+    return trips;
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = (h, m) => `${pad(h)}:${pad(m)}`;
+
+  // ============================================================
+  //  GROUP 1 — GENERAL INFO
+  // ============================================================
+  if (['gen_info','gen_info_merged','obj_info','cur_pos','cur_pos_offline'].includes(type)) {
+
+    const totalKm    = vehicles.reduce((s,v) => s + (monthlyStats[v.rawId]?.km   || 0), 0);
+    const totalFuel  = vehicles.reduce((s,v) => s + (monthlyStats[v.rawId]?.fuel || 0), 0);
+    const totalTrips = vehicles.reduce((s,v) => s + (monthlyStats[v.rawId]?.trips|| 0), 0);
+    const avgEff     = totalFuel > 0 ? (totalKm / totalFuel).toFixed(1) : '—';
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('📏',`${totalKm.toFixed(0)} كم`,'إجمالي الكيلومترات','blue')}
+        ${kpi('⛽',`${totalFuel.toFixed(0)} ل`,'إجمالي الوقود المستهلك','purple')}
+        ${kpi('🔄',totalTrips,'إجمالي الرحلات','green')}
+        ${kpi('💡',`${avgEff} كم/ل`,'كفاءة الوقود المتوسطة','cyan')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">📈 الكيلومترات اليومية للأسطول</div></div><div style="height:220px"><canvas id="g-daily-km"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">⛽ استهلاك الوقود لكل مركبة</div></div><div style="height:220px"><canvas id="g-fuel-v"></canvas></div></div>
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">🚗 المسافة لكل مركبة (كم)</div></div><div style="height:220px"><canvas id="g-km-v"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">🔄 توزيع حالات الأسطول الآن</div></div><div style="height:220px"><canvas id="g-status"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 ملخص أداء كل مركبة — الفترة من ${fromDate} إلى ${toDate}</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>اللوحة</th><th>السائق</th><th>الرحلات</th><th>إجمالي كم</th><th>متوسط/يوم</th><th>الوقود (ل)</th><th>كفاءة الوقود</th><th>آخر موقع</th><th>الحالة</th></tr></thead>
+          <tbody>${vehicles.map((v,i) => {
+            const ms = monthlyStats[v.rawId]||{km:0,fuel:0,trips:0};
+            const d  = FleetData.getDriverByVehicle(v.rawId);
+            const eff= ms.fuel > 0 ? (ms.km/ms.fuel).toFixed(1)+' كم/ل' : '—';
+            const effC= ms.fuel>0&&(ms.km/ms.fuel)>=10?'var(--green)':(ms.fuel>0&&(ms.km/ms.fuel)>=7?'var(--yellow)':'var(--red)');
+            return `<tr>
+              <td>${i+1}</td>
+              <td><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${v.color}"></div><b>${v.name}</b></div></td>
+              <td style="font-family:monospace;color:var(--accent-light)">${v.plate}</td>
+              <td>${d?d.name:'—'}</td>
+              <td style="color:var(--accent-light);font-weight:700">${ms.trips}</td>
+              <td style="font-weight:700">${ms.km.toFixed(0)} كم</td>
+              <td>${(ms.km/7).toFixed(1)} كم</td>
+              <td>${ms.fuel.toFixed(1)} ل</td>
+              <td style="color:${effC};font-weight:700">${eff}</td>
+              <td style="font-size:11px;color:var(--text-secondary)">${loc(v.id)}</td>
+              <td>${badge(statusLabels[v.status]||'—', statusColors[v.status]||'var(--text-muted)')}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const vNames = vehicles.map(v => v.name.replace('السيارة ','س'));
+    charts['g-daily-km'] = new Chart(document.getElementById('g-daily-km'),{type:'bar',data:{labels:dailyData.labels,datasets:[{label:'كيلومترات',data:dailyData.data,backgroundColor:'rgba(59,130,246,0.5)',borderColor:'#3b82f6',borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    charts['g-fuel-v']   = new Chart(document.getElementById('g-fuel-v'),{type:'bar',data:{labels:vNames,datasets:[{label:'وقود (ل)',data:vehicles.map(v=>(monthlyStats[v.rawId]?.fuel||0).toFixed(1)),backgroundColor:vehicles.map(v=>v.color+'88'),borderColor:vehicles.map(v=>v.color),borderWidth:2,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    charts['g-km-v']     = new Chart(document.getElementById('g-km-v'),{type:'bar',data:{labels:vNames,datasets:[{label:'كيلومترات',data:vehicles.map(v=>(monthlyStats[v.rawId]?.km||0).toFixed(1)),backgroundColor:vehicles.map(v=>v.color+'66'),borderColor:vehicles.map(v=>v.color),borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    charts['g-status']   = new Chart(document.getElementById('g-status'),{type:'doughnut',data:{labels:['يتحرك','واقف','خامل','غير متصل'],datasets:[{data:[fleetStats.moving,fleetStats.stopped,fleetStats.idle,fleetStats.offline],backgroundColor:['rgba(34,197,94,0.8)','rgba(239,68,68,0.8)','rgba(245,158,11,0.8)','rgba(107,114,128,0.8)'],borderColor:['#22c55e','#ef4444','#f59e0b','#6b7280'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right'}}}});
+
+  // ============================================================
+  //  GROUP 2 — DRIVES & STOPS (تفصيلي موقع بموقع)
+  // ============================================================
+  } else if (['drives_stops','drives_stops_sensors','drives_stops_logic','travel_sheet','travel_sheet_day_night','mileage_daily','working_hours_mileage','working_hours_mileage_compact'].includes(type)) {
+
+    // ── GPS waypoints (Riyadh area) each with lat/lng ──────────────
+    const waypoints = [
+      { name: 'مستودع الشركة — الرياض',         lat: 24.7136, lng: 46.6753 },
+      { name: 'طريق الملك فهد — حي العليا',      lat: 24.6970, lng: 46.6873 },
+      { name: 'طريق الدائري الشمالي — حي النزهة', lat: 24.7500, lng: 46.6600 },
+      { name: 'حي الملقا — شمال الرياض',          lat: 24.7800, lng: 46.6400 },
+      { name: 'طريق الإمام سعود — وسط المدينة',   lat: 24.6800, lng: 46.7100 },
+      { name: 'طريق العليا — برج المملكة',         lat: 24.7115, lng: 46.6742 },
+      { name: 'حي المروج — الدائري الثالث',        lat: 24.7300, lng: 46.7200 },
+      { name: 'طريق الملك عبدالله — غرب الرياض',  lat: 24.6920, lng: 46.6300 },
+      { name: 'حي الياسمين — شمال شرق',            lat: 24.7650, lng: 46.7350 },
+      { name: 'حي الشفا — جنوب الرياض',            lat: 24.6300, lng: 46.7000 },
+      { name: 'مطار الملك خالد الدولي',             lat: 24.9576, lng: 46.6988 },
+      { name: 'طريق صلبوخ — شرق الرياض',          lat: 24.7000, lng: 46.8200 },
+      { name: 'حي الربوة — وسط الرياض',            lat: 24.6700, lng: 46.7300 },
+      { name: 'طريق الدائري الشرقي — المطار',      lat: 24.8000, lng: 46.7700 },
+      { name: 'حي الحمراء — غرب الرياض',           lat: 24.6500, lng: 46.6400 },
+    ];
+
+    // Haversine formula → distance in km between two GPS points
+    function haversine(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+      return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+    }
+
+    // Build detailed waypoint timeline per vehicle
+    function buildWaypointTimeline(v, idx) {
+      const n = nid(v);
+      const numStops = 3 + (n % 4); // 3-6 stops per vehicle
+      const timeline = [];
+      let curH = 6 + (n % 3);
+      let curM = (idx * 11) % 60;
+      let wpIdx = (n + idx) % waypoints.length;
+
+      // Starting point (depot/garage)
+      const startWp = waypoints[wpIdx];
+      timeline.push({ type: 'depart', time: fmt(curH, curM), location: startWp.name, lat: startWp.lat, lng: startWp.lng, info: 'نقطة الانطلاق' });
+
+      for (let s = 0; s < numStops; s++) {
+        // Drive leg
+        const driveMin = 25 + ((n + s * 7) % 55);
+        const endTotalMin = curH * 60 + curM + driveMin;
+        const arrH = Math.floor(endTotalMin / 60) % 24;
+        const arrM = endTotalMin % 60;
+
+        // Next waypoint
+        wpIdx = (wpIdx + 1 + s * 2) % waypoints.length;
+        const destWp = waypoints[wpIdx];
+        const prevWp = timeline[timeline.length - 1];
+        const distKm = haversine(prevWp.lat, prevWp.lng, destWp.lat, destWp.lng);
+        const avgSpd = 45 + ((n + s * 3) % 35);
+        const maxSpd = 80 + ((n + s) % 50);
+
+        timeline.push({
+          type: 'arrive',
+          time: fmt(arrH, arrM),
+          location: destWp.name,
+          lat: destWp.lat,
+          lng: destWp.lng,
+          driveMin,
+          distKm,
+          avgSpd,
+          maxSpd,
+          info: `قطع ${distKm} كم في ${driveMin} د`
+        });
+
+        // Stop at this location
+        const stopMin = 5 + ((n + s * 5) % 50);
+        const depH = Math.floor((arrH * 60 + arrM + stopMin) / 60) % 24;
+        const depM = (arrH * 60 + arrM + stopMin) % 60;
+        const stopReason = ['تحميل/تفريل','اجتماع عمل','توقف مجدول','تسليم بضاعة','استراحة سائق','خدمة عملاء'][(n + s * 3) % 6];
+        timeline.push({
+          type: 'stop',
+          time: fmt(depH, depM),
+          location: destWp.name,
+          lat: destWp.lat,
+          lng: destWp.lng,
+          stopMin,
+          info: stopReason
+        });
+
+        curH = depH;
+        curM = depM;
+      }
+
+      // Return to base
+      const baseWp = waypoints[(n) % waypoints.length];
+      const returnMin = 20 + ((n * 3) % 40);
+      const retTotal = curH * 60 + curM + returnMin;
+      const retH = Math.floor(retTotal / 60) % 24;
+      const retM = retTotal % 60;
+      const lastWp = timeline[timeline.length - 1];
+      const retDist = haversine(lastWp.lat, lastWp.lng, baseWp.lat, baseWp.lng);
+      timeline.push({
+        type: 'arrive',
+        time: fmt(retH, retM),
+        location: baseWp.name,
+        lat: baseWp.lat,
+        lng: baseWp.lng,
+        driveMin: returnMin,
+        distKm: retDist,
+        avgSpd: 50 + ((n * 2) % 30),
+        maxSpd: 90 + ((n) % 30),
+        info: `العودة — ${retDist} كم في ${returnMin} د`
+      });
+      timeline.push({ type: 'end', time: fmt(retH, retM), location: baseWp.name, lat: baseWp.lat, lng: baseWp.lng, info: 'انتهاء المشوار' });
+
+      return timeline;
+    }
+
+    // KPI totals
+    const allTrips = vehicles.flatMap((v,idx) => buildTrips(v,idx).map((t,ti) => ({...t, v, ti})));
+    const totalDriveMin = allTrips.reduce((s,t) => s + t.durMin, 0);
+    const totalStopMin  = allTrips.reduce((s,t) => s + t.stopDur, 0);
+    const totalKmDS     = allTrips.reduce((s,t) => s + parseFloat(t.km), 0);
+    const maxSpdAll     = Math.max(...allTrips.map(t => t.maxSpd));
+
+    // Build per-vehicle waypoint HTML
+    const vehicleCards = vehicles.map((v, idx) => {
+      const timeline = buildWaypointTimeline(v, idx);
+      const d = FleetData.getDriverByVehicle(v.rawId);
+      const totalDist = timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+parseFloat(e.distKm||0),0).toFixed(1);
+      const totalDrv  = timeline.filter(e=>e.type==='arrive').reduce((s,e)=>s+(e.driveMin||0),0);
+      const totalStp  = timeline.filter(e=>e.type==='stop').reduce((s,e)=>s+(e.stopMin||0),0);
+      const stops     = timeline.filter(e=>e.type==='stop').length;
+
+      const rows = timeline.map((e, ei) => {
+        if (e.type === 'depart') return `
+          <tr style="background:rgba(34,197,94,0.07)">
+            <td style="padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(34,197,94,0.15);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏁</div>
+                <div>
+                  <div style="font-weight:700;color:var(--green);font-size:13px">انطلاق</div>
+                  <div style="color:var(--text-secondary);font-size:11px">${e.info}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:700;color:var(--green);font-size:14px;padding:10px 12px">${e.time}</td>
+            <td style="padding:10px 12px" colspan="2">
+              <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;display:block">
+                <div style="font-size:12px;color:var(--accent-light);font-weight:600;display:flex;align-items:center;gap:4px">📍 ${e.location} <span style="font-size:10px;opacity:0.7">🔗</span></div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${e.lat.toFixed(4)}°N, ${e.lng.toFixed(4)}°E</div>
+              </a>
+            </td>
+            <td colspan="3" style="color:var(--text-muted);font-size:11px;padding:10px 12px">—</td>
+          </tr>`;
+
+        if (e.type === 'arrive') return `
+          <tr style="background:rgba(59,130,246,0.05)">
+            <td style="padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚗</div>
+                <div>
+                  <div style="font-weight:700;color:var(--accent-light);font-size:13px">وصول</div>
+                  <div style="color:var(--text-secondary);font-size:11px">${e.info}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:700;color:var(--accent-light);font-size:14px;padding:10px 12px">${e.time}</td>
+            <td style="padding:10px 12px">
+              <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;display:block">
+                <div style="font-size:12px;color:var(--accent-light);font-weight:600;display:flex;align-items:center;gap:4px">📍 ${e.location} <span style="font-size:10px;opacity:0.7">🔗</span></div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${e.lat.toFixed(4)}°N, ${e.lng.toFixed(4)}°E</div>
+              </a>
+            </td>
+            <td style="padding:10px 12px">
+              <div style="font-weight:700;color:var(--accent-light);font-size:13px">${parseFloat(e.distKm || 0).toFixed(1)} كم</div>
+              <div style="font-size:10px;color:var(--text-muted)">مسافة الخريطة</div>
+            </td>
+            <td style="padding:10px 12px">
+              <div style="font-size:12px">${e.driveMin} د</div>
+              <div style="font-size:10px;color:var(--text-muted)">مدة القيادة</div>
+            </td>
+            <td style="padding:10px 12px">
+              <div style="font-size:12px">${e.avgSpd} كم/س</div>
+              <div style="font-size:10px;color:var(--text-muted)">متوسط السرعة</div>
+            </td>
+            <td style="padding:10px 12px">
+              <div style="font-size:12px;color:${e.maxSpd>120?'var(--red)':e.maxSpd>100?'var(--yellow)':'var(--text-primary)'};font-weight:700">${e.maxSpd} كم/س</div>
+              <div style="font-size:10px;color:var(--text-muted)">أقصى سرعة</div>
+            </td>
+          </tr>`;
+
+        if (e.type === 'stop') return `
+          <tr style="background-color:rgba(239,68,68,0.07)">
+            <td style="padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🛑</div>
+                <div>
+                  <div style="font-weight:700;color:var(--red);font-size:13px">توقف</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:700;color:var(--red);font-size:14px;padding:10px 12px">${e.time}</td>
+            <td style="padding:10px 12px">
+              <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;display:block">
+                <div style="font-size:12px;color:var(--red);font-weight:600;display:flex;align-items:center;gap:4px">📍 ${e.location} <span style="font-size:10px;opacity:0.7">🔗</span></div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${e.lat.toFixed(4)}°N, ${e.lng.toFixed(4)}°E</div>
+              </a>
+            </td>
+            <td style="padding:10px 12px" colspan="4">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="background:rgba(239,68,68,0.15);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">⏱ ${e.stopMin} دقيقة توقف</span>
+                <span style="color:var(--text-secondary);font-size:11px">السبب: ${e.info || 'توقف مجدول'}</span>
+              </div>
+            </td>
+          </tr>`;
+
+        if (e.type === 'end') return `
+          <tr style="background:rgba(107,114,128,0.07)">
+            <td style="padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(107,114,128,0.15);border:2px solid #6b7280;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏠</div>
+                <div>
+                  <div style="font-weight:700;color:#9ca3af;font-size:13px">انتهاء المشوار</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:700;color:#9ca3af;font-size:14px;padding:10px 12px">${e.time}</td>
+            <td style="padding:10px 12px" colspan="5">
+              <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" style="text-decoration:none;color:inherit;cursor:pointer;display:inline-block">
+                <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px">📍 ${e.location} <span style="font-size:10px;opacity:0.7">🔗</span></span>
+              </a>
+            </td>
+          </tr>`;
+        return '';
+      }).join('');
+
+      return `
+        <div class="card" style="margin-bottom:16px;border-top:3px solid ${v.color}">
+          <div class="card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <div class="card-title">
+              <div style="width:10px;height:10px;border-radius:50%;background:${v.color};display:inline-block;margin-left:8px"></div>
+              ${v.name} — ${v.plate}
+              <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-right:16px">${d?'👤 '+d.name:'بدون سائق'}</span>
+            </div>
+            <div style="display:flex;gap:16px;font-size:12px">
+              <span style="color:var(--accent-light)">📏 ${totalDist} كم</span>
+              <span style="color:var(--green)">⏱ ${Math.floor(totalDrv/60)}س ${totalDrv%60}د حركة</span>
+              <span style="color:var(--red)">🛑 ${Math.floor(totalStp/60)}س ${totalStp%60}د توقف</span>
+              <span style="color:var(--yellow)">📍 ${stops} توقفات</span>
+            </div>
+          </div>
+          <div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="background:rgba(255,255,255,0.03)">
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:220px">الحدث</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:80px">الوقت</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600">الموقع (الخريطة)</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:100px">المسافة</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:90px">مدة القيادة</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:110px">متوسط السرعة</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;width:100px">أقصى سرعة</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join('');
+
+    area.innerHTML = `
+      <div style="margin-top:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="font-size:15px;font-weight:700;color:var(--text-primary)">🗺️ مسار كل مركبة — تفصيل كامل بالمواقع والأوقات والمسافات</h3>
+          <span style="font-size:11px;color:var(--text-muted)">اضغط على رأس كل مركبة لطي/فتح التفاصيل</span>
+        </div>
+        ${vehicleCards}
+      </div>
+      
+      <!-- ملخص الرحلة في نهاية التقرير -->
+      <div class="card" style="margin-top:20px;background:linear-gradient(135deg, rgba(37,99,235,0.15) 0%, rgba(37,99,235,0.05) 100%);border:1px solid rgba(37,99,235,0.3)">
+        <div class="card-body" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:24px">📋</span>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text-primary)">ملخص الرحلة النهائي</div>
+              <div style="font-size:12px;color:var(--text-secondary)">مجموع أداء المركبات المحددة خلال الفترة المذكورة</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:24px;align-items:center">
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:800;color:var(--accent-light)">${allTrips.length} رحلة</div>
+              <div style="font-size:11px;color:var(--text-muted)">إجمالي عدد الرحلات</div>
+            </div>
+            <div style="height:30px;width:1px;background:var(--border)"></div>
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:800;color:var(--green)">${totalKmDS.toFixed(1)} كم</div>
+              <div style="font-size:11px;color:var(--text-muted)">إجمالي المسافة المقطوعة</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+  // ============================================================
+  //  GROUP 3 — SPEED (مفصل حدث سرعة بحدث)
+  // ============================================================
+  } else if (['overspeed','underspeed','graph_speed'].includes(type)) {
+
+    const isOver = type !== 'underspeed';
+    const limit  = parseInt(document.getElementById('rf-speed')?.value) || 100;
+
+    // Build per-vehicle speed events
+    const speedEvents = vehicles.flatMap((v,vi) => {
+      const nEv = 2 + (v.id % 5);
+      return Array.from({length:nEv},(_,ei) => ({
+        v,
+        time: `${fmt(7+(v.id+ei)%15, (ei*17+v.id*3)%60)}`,
+        recorded: isOver ? limit + 5 + ((v.id*3+ei*7)%40) : limit - 5 - ((v.id+ei*3)%30),
+        loc: loc(v.id+ei),
+        dur: 15 + ((v.id+ei*5)%120)
+      }));
+    });
+
+    const totalViol = speedEvents.length;
+    const maxRecorded = isOver ? Math.max(...speedEvents.map(e=>e.recorded)) : Math.min(...speedEvents.map(e=>e.recorded));
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi(isOver?'⚠️':'🐢', `${totalViol} حدث`, isOver?'إجمالي تجاوزات السرعة':'إجمالي أحداث السرعة المنخفضة', isOver?'red':'purple')}
+        ${kpi('🚀', `${maxRecorded} كم/س`, isOver?'أعلى سرعة مسجلة':'أدنى سرعة مسجلة', 'purple')}
+        ${kpi('🛡️', `${limit} كم/س`, 'حد السرعة المضبوط', 'blue')}
+        ${kpi('📊', vehicles.length, 'مركبات فحصت', 'cyan')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">📊 عدد أحداث السرعة لكل مركبة</div></div><div style="height:240px"><canvas id="sp-bar"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">📈 تطور السرعة خلال اليوم (متوسط الأسطول)</div></div><div style="height:240px"><canvas id="sp-line"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 سجل ${isOver?'تجاوزات':'أحداث'} السرعة — تفصيلي (${fromDate})</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>السائق</th><th>التاريخ والوقت</th><th>السرعة المسجلة</th><th>الحد المسموح</th><th>الفارق</th><th>مدة الحدث (ث)</th><th>الموقع / العنوان</th><th>الخطورة</th></tr></thead>
+          <tbody>${speedEvents.map((e,i) => {
+            const d = FleetData.getDriverByVehicle(e.v.rawId);
+            const diff = Math.abs(e.recorded - limit);
+            const sev = diff > 40 ? ['عالية جداً','var(--red)'] : diff > 20 ? ['متوسطة','var(--yellow)'] : ['منخفضة','var(--green)'];
+            return `<tr>
+              <td>${i+1}</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${e.v.color}"></div><b>${e.v.name}</b></div></td>
+              <td>${d?d.name:'—'}</td>
+              <td>${fromDate} ${e.time}</td>
+              <td style="color:${isOver?'var(--red)':'var(--yellow)'};font-weight:800">${e.recorded} كم/س</td>
+              <td>${limit} كم/س</td>
+              <td style="font-weight:700;color:var(--purple)">+${diff} كم/س</td>
+              <td>${e.dur} ث</td>
+              <td style="font-size:11px;color:var(--text-secondary)">${e.loc}</td>
+              <td>${badge(sev[0],sev[1])}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const vNames3 = vehicles.map(v=>v.name.replace('السيارة ','س'));
+    const evPerV  = vehicles.map(v=>speedEvents.filter(e=>e.v.id===v.id).length);
+    charts['sp-bar']  = new Chart(document.getElementById('sp-bar'),{type:'bar',data:{labels:vNames3,datasets:[{label:'أحداث',data:evPerV,backgroundColor:isOver?'rgba(239,68,68,0.7)':'rgba(245,158,11,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    charts['sp-line'] = new Chart(document.getElementById('sp-line'),{type:'line',data:{labels:['06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00'],datasets:[{label:'متوسط السرعة',data:[30,55,80,75,82,68,60,40],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:0.35,pointRadius:5,pointBackgroundColor:'#3b82f6'},{label:`حد السرعة (${limit})`,data:Array(8).fill(limit),borderColor:'rgba(239,68,68,0.7)',borderDash:[6,4],borderWidth:2,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false}});
+
+  // ============================================================
+  //  GROUP 4 — GEOFENCE IN/OUT
+  // ============================================================
+  } else if (['geofence_in_out','zone_in_out_gen'].includes(type)) {
+
+    const zones = ['فرع الرياض الرئيسي','فرع العليا','مستودع الشمال','فرع جدة الرياض','موقع الإدارة المركزية'];
+    const geoEvents = vehicles.flatMap((v,vi) =>
+      Array.from({length: 3+(v.id%4)},(_,ei) => ({
+        v,
+        zone: zones[(v.id+ei)%zones.length],
+        inTime:  `${fmt(6+(v.id+ei)%12,(ei*13+v.id*5)%60)}`,
+        outTime: `${fmt(7+(v.id+ei)%12+1,((ei+1)*13+v.id*5)%60)}`,
+        dur: 12 + ((v.id*5+ei*7)%80),
+        status: ei%5===3?'خروج بدون إذن':'ناجح'
+      }))
+    );
+
+    const totalIn   = geoEvents.length;
+    const totalTime = geoEvents.reduce((s,e)=>s+e.dur,0);
+    const mostZone  = zones[vehicles.reduce((b,v)=>v.id>b?v.id:b,0) % zones.length];
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('🏁', `${totalIn} دخول`, 'إجمالي دخول المناطق', 'blue')}
+        ${kpi('⏱️', `${Math.round(totalTime/60)} س`, 'إجمالي الوقت داخل الفروع', 'purple')}
+        ${kpi('🏆', mostZone, 'المنطقة الأكثر زيارة', 'green')}
+        ${kpi('📍', zones.length, 'مناطق جيوفنس نشطة', 'cyan')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">📊 توزيع الزيارات على المناطق</div></div><div style="height:240px"><canvas id="geo-pie"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">📊 عدد زيارات كل مركبة</div></div><div style="height:240px"><canvas id="geo-bar"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 سجل الدخول والخروج من مناطق الجيوفنس (${fromDate} → ${toDate})</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>السائق</th><th>المنطقة / الفرع</th><th>وقت الدخول</th><th>وقت الخروج</th><th>مدة البقاء</th><th>الحالة</th></tr></thead>
+          <tbody>${geoEvents.map((e,i) => {
+            const d = FleetData.getDriverByVehicle(e.v.rawId);
+            const isAlert = e.status !== 'ناجح';
+            return `<tr style="${isAlert?'background:rgba(239,68,68,0.05)':''}">
+              <td>${i+1}</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${e.v.color}"></div><b>${e.v.name}</b></div></td>
+              <td>${d?d.name:'—'}</td>
+              <td style="font-weight:700;color:var(--accent-light)">${e.zone}</td>
+              <td style="color:var(--green);font-weight:700">${fromDate} ${e.inTime}</td>
+              <td style="color:var(--red);font-weight:700">${fromDate} ${e.outTime}</td>
+              <td>${e.dur} د</td>
+              <td>${badge(e.status, isAlert?'var(--red)':'var(--green)')}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const zoneCount = zones.map(z => geoEvents.filter(e=>e.zone===z).length);
+    const vNames4 = vehicles.map(v=>v.name.replace('السيارة ','س'));
+    charts['geo-pie'] = new Chart(document.getElementById('geo-pie'),{type:'doughnut',data:{labels:zones,datasets:[{data:zoneCount,backgroundColor:['rgba(59,130,246,0.8)','rgba(16,185,129,0.8)','rgba(139,92,246,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:11}}}}}});
+    charts['geo-bar'] = new Chart(document.getElementById('geo-bar'),{type:'bar',data:{labels:vNames4,datasets:[{label:'زيارات',data:vehicles.map(v=>geoEvents.filter(e=>e.v.id===v.id).length),backgroundColor:'rgba(34,197,94,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+
+  // ============================================================
+  //  GROUP 5 — FUEL FILLINGS / THEFTS
+  // ============================================================
+  } else if (['fuel_fillings','fuel_thefts','graph_fuel','fuel-fillings'].includes(type)) {
+
+    const fuelEvents = vehicles.flatMap((v,vi) =>
+      Array.from({length: 2+(v.id%4)},(_,fi) => {
+        const isTheft = (v.id+fi)%7===0 || type==='fuel_thefts';
+        const qty = isTheft ? -(20+((v.id+fi)%40)) : (60+((v.id*3+fi*7)%180));
+        return { v, isTheft, qty, time:`${fmt(1+(v.id+fi)%23,(fi*19+v.id*7)%60)}`, level:`${30+((v.id+fi)*7)%65}%`, cost: qty>0?qty*4:qty*4 };
+      })
+    );
+
+    const totalFill   = fuelEvents.filter(e=>!e.isTheft).reduce((s,e)=>s+e.qty,0);
+    const totalTheft  = fuelEvents.filter(e=>e.isTheft).length;
+    const totalCost   = fuelEvents.filter(e=>!e.isTheft).reduce((s,e)=>s+e.cost,0);
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('⛽', `${totalFill.toFixed(0)} ل`, 'إجمالي الوقود المضاف', 'green')}
+        ${kpi('⚠️', `${totalTheft} حادثة`, 'مشتبه به سرقة وقود', 'red')}
+        ${kpi('💳', `${totalCost.toLocaleString()} ر`, 'التكلفة الإجمالية', 'blue')}
+        ${kpi('💡', `${vehicles.length > 0 ? (totalFill/vehicles.length).toFixed(0) : 0} ل`, 'متوسط الوقود/مركبة', 'cyan')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">⛽ كميات التعبئة لكل مركبة (لتر)</div></div><div style="height:240px"><canvas id="fl-bar"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">📈 تغير مستوى خزان الوقود خلال اليوم</div></div><div style="height:240px"><canvas id="fl-level"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 سجل أحداث الوقود — تعبئة، سحب، مشتبه به (${fromDate} → ${toDate})</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>التاريخ والوقت</th><th>نوع الحدث</th><th>الكمية (لتر)</th><th>مستوى الخزان</th><th>التكلفة (ر.س)</th><th>الحالة</th></tr></thead>
+          <tbody>${fuelEvents.map((e,i) => `<tr style="${e.isTheft?'background:rgba(239,68,68,0.06)':''}">
+            <td>${i+1}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${e.v.color}"></div><b>${e.v.name}</b></div></td>
+            <td>${fromDate} ${e.time}</td>
+            <td style="color:${e.isTheft?'var(--red)':'var(--green)'};font-weight:700">${e.isTheft?'⚠️ سحب/سرقة':'✅ تعبئة وقود'}</td>
+            <td style="font-weight:800;color:${e.isTheft?'var(--red)':'var(--green)'}">${e.qty > 0?'+':''}${e.qty} ل</td>
+            <td>${e.level}</td>
+            <td style="font-weight:700">${Math.abs(e.cost).toLocaleString()}</td>
+            <td>${badge(e.isTheft?'مشتبه به':'ناجحة', e.isTheft?'var(--red)':'var(--green)')}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const vNames5 = vehicles.map(v=>v.name.replace('السيارة ','س'));
+    const fillPerV = vehicles.map(v => fuelEvents.filter(e=>e.v.id===v.id&&!e.isTheft).reduce((s,e)=>s+e.qty,0));
+    charts['fl-bar']   = new Chart(document.getElementById('fl-bar'),{type:'bar',data:{labels:vNames5,datasets:[{label:'تعبئة (ل)',data:fillPerV,backgroundColor:'rgba(16,185,129,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    charts['fl-level'] = new Chart(document.getElementById('fl-level'),{type:'line',data:{labels:['06:00','08:00','09:30','10:00','12:00','14:00','16:00','18:00'],datasets:[{label:'مستوى الوقود %',data:[28,26,95,90,82,70,60,55],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#10b981'},{label:'سرقة محتملة',data:[null,null,null,null,null,null,null,null],borderColor:'rgba(239,68,68,0.7)',borderDash:[5,5],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false}});
+
+  // ============================================================
+  //  GROUP 6 — EXPENSES
+  // ============================================================
+  } else if (['expenses','service'].includes(type)) {
+
+    const expTypes = ['تعبئة وقود','صيانة دورية','غسيل وتنظيف','استبدال إطارات','غرامة مرورية','تأمين سنوي','فحص دوري'];
+    const expEvents = vehicles.flatMap((v,vi) =>
+      Array.from({length: 3+(v.id%5)},(_,ei) => {
+        const typ = expTypes[(v.id+ei)%expTypes.length];
+        const amt = 150 + ((v.id*17+ei*43)%1850);
+        return { v, typ, amt, time:`${fmt(8+(v.id+ei)%10,(ei*11+v.id*7)%60)}`, desc: `${typ} — فاتورة رقم INV-${1000+v.id*10+ei}` };
+      })
+    );
+
+    const totalExp  = expEvents.reduce((s,e)=>s+e.amt,0);
+    const fuelExp   = expEvents.filter(e=>e.typ.includes('وقود')).reduce((s,e)=>s+e.amt,0);
+    const maint     = expEvents.filter(e=>e.typ.includes('صيانة')||e.typ.includes('إطارات')||e.typ.includes('فحص')).reduce((s,e)=>s+e.amt,0);
+    const other     = totalExp - fuelExp - maint;
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('💵', `${totalExp.toLocaleString()} ر.س`, 'إجمالي المصروفات', 'blue')}
+        ${kpi('⛽', `${fuelExp.toLocaleString()} ر.س`, 'مصاريف الوقود', 'purple')}
+        ${kpi('🔧', `${maint.toLocaleString()} ر.س`, 'مصاريف الصيانة', 'green')}
+        ${kpi('📂', `${other.toLocaleString()} ر.س`, 'مصاريف أخرى', 'red')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">📊 توزيع المصروفات بالأنواع</div></div><div style="height:240px"><canvas id="ex-pie"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">💵 إجمالي المصروفات لكل مركبة (ر.س)</div></div><div style="height:240px"><canvas id="ex-bar"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 كشف حساب تفصيلي لكل مصروف (${fromDate} → ${toDate})</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>التاريخ والوقت</th><th>نوع المصروف</th><th>التفاصيل</th><th>المبلغ (ر.س)</th></tr></thead>
+          <tbody>${expEvents.map((e,i) => `<tr>
+            <td>${i+1}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${e.v.color}"></div><b>${e.v.name}</b></div></td>
+            <td>${fromDate} ${e.time}</td>
+            <td>${badge(e.typ,'var(--accent)')}</td>
+            <td style="font-size:12px;color:var(--text-secondary)">${e.desc}</td>
+            <td style="font-weight:700;color:var(--accent-light)">${e.amt.toLocaleString()}</td>
+          </tr>`).join('')}
+          <tr style="background:rgba(59,130,246,0.08)">
+            <td colspan="5" style="text-align:right;font-weight:700;color:var(--text-secondary)">الإجمالي الكلي</td>
+            <td style="font-weight:800;color:var(--accent);font-size:14px">${totalExp.toLocaleString()} ر.س</td>
+          </tr></tbody>
+        </table></div>
+      </div>`;
+
+    const expCats   = ['وقود','صيانة','غسيل','إطارات','غرامات','تأمين','فحص'];
+    const expCatAmt = expCats.map(c => expEvents.filter(e=>e.typ.includes(c.slice(0,4))).reduce((s,e)=>s+e.amt,0));
+    const vNames6   = vehicles.map(v=>v.name.replace('السيارة ','س'));
+    charts['ex-pie'] = new Chart(document.getElementById('ex-pie'),{type:'doughnut',data:{labels:expCats,datasets:[{data:expCatAmt,backgroundColor:['rgba(59,130,246,0.8)','rgba(16,185,129,0.8)','rgba(139,92,246,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)','rgba(6,182,212,0.8)','rgba(249,115,22,0.8)'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'right',labels:{font:{size:11}}}}}});
+    charts['ex-bar'] = new Chart(document.getElementById('ex-bar'),{type:'bar',data:{labels:vNames6,datasets:[{label:'إجمالي المصروفات (ر.س)',data:vehicles.map(v=>expEvents.filter(e=>e.v.id===v.id).reduce((s,e)=>s+e.amt,0)),backgroundColor:vehicles.map(v=>v.color+'99'),borderColor:vehicles.map(v=>v.color),borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+
+  // ============================================================
+  //  GROUP 7 — DRIVER BEHAVIOR / DTC / EVENTS / SAFETY
+  // ============================================================
+  } else if (['driver_behavior_object','driver_behavior_driver','driver_behavior_rag','dtc','events','rfid_ibutton','logic_sensors'].includes(type)) {
+
+    const isDTC = type === 'dtc';
+    const isRFID = type === 'rfid_ibutton';
+
+    const dtcCodes = ['P0300 — اضطراب إشعال أسطوانات','P0171 — خلط وقود/هواء خاطئ','P0420 — محول حفاز رقم 1','B0100 — خطأ وحدة الوسادة الهوائية','C0001 — خطأ مضخة الفرامل ABS','U0001 — فقدان اتصال شبكة CAN'];
+
+    const behavData = vehicles.map((v,vi) => ({
+      v,
+      score: 60 + ((v.id*7+vi*3)%40),
+      harshBrake:  (v.id*3+vi)%8,
+      harshAccel:  (v.id*2+vi)%6,
+      sharpTurn:   (v.id+vi*2)%5,
+      overspeed:   (v.id*2+vi*3)%7,
+      dtcs: isDTC ? Array.from({length:1+(v.id%3)},(_,di)=>dtcCodes[(v.id+di)%dtcCodes.length]) : []
+    }));
+
+    const avgScore = Math.round(behavData.reduce((s,b)=>s+b.score,0)/behavData.length);
+    const totalHarsh= behavData.reduce((s,b)=>s+b.harshBrake+b.harshAccel,0);
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('🏆', `${avgScore}/100`, isDTC?'أكواد أعطال نشطة':'متوسط تقييم القيادة', avgScore>=80?'green':avgScore>=60?'cyan':'red')}
+        ${kpi('🛑', totalHarsh, isDTC?'مركبات تحمل أكواد DTC':'إجمالي أحداث الفرملة والتسارع العنيف', 'red')}
+        ${kpi('⚡', behavData.reduce((s,b)=>s+b.overspeed,0), 'أحداث السرعة الزائدة المرتبطة', 'yellow')}
+        ${kpi('🔧', vehicles.length, isDTC?'مركبات فُحصت':'سائقون مقيّمون', 'blue')}
+      </div>
+      <div class="reports-grid">
+        <div class="chart-box"><div class="card-header"><div class="card-title">🏆 ${isDTC?'توزيع خطورة الأعطال':'تقييم سلوك السائقين — تفصيلي'}</div></div><div style="height:240px"><canvas id="beh-radar"></canvas></div></div>
+        <div class="chart-box"><div class="card-header"><div class="card-title">📊 مقارنة أنواع الأحداث لكل مركبة</div></div><div style="height:240px"><canvas id="beh-bar"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 ${isDTC?'سجل أكواد الأعطال التشخيصية (DTC)':'تقرير سلوك وتقييم القيادة — ' + fromDate}</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>السائق</th>
+            ${isDTC?'<th>كود العطل (DTC)</th><th>الوصف</th><th>الخطورة</th><th>الحالة</th>'
+                   :'<th>التقييم /100</th><th>فرملة حادة</th><th>تسارع عنيف</th><th>منعطف حاد</th><th>تجاوز سرعة</th><th>التقدير</th>'}
+          </tr></thead>
+          <tbody>${behavData.map((b,i) => {
+            const d = FleetData.getDriverByVehicle(b.v.rawId);
+            const scoreC = b.score>=80?'var(--green)':b.score>=60?'var(--yellow)':'var(--red)';
+            const rating = b.score>=80?'ممتاز':b.score>=70?'جيد جداً':b.score>=60?'مقبول':'يحتاج تحسين';
+            if (isDTC) {
+              return b.dtcs.map((dtc,di) => `<tr>
+                <td>${i*3+di+1}</td>
+                <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${b.v.color}"></div><b>${b.v.name}</b></div></td>
+                <td>${d?d.name:'—'}</td>
+                <td style="font-family:monospace;color:var(--yellow);font-weight:700">${dtc.split(' — ')[0]}</td>
+                <td style="font-size:12px">${dtc.split(' — ')[1]}</td>
+                <td>${badge(di===0?'عالية':di===1?'متوسطة':'منخفضة',di===0?'var(--red)':di===1?'var(--yellow)':'var(--green)')}</td>
+                <td>${badge('نشط','var(--red)')}</td>
+              </tr>`).join('');
+            }
+            return `<tr>
+              <td>${i+1}</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${b.v.color}"></div><b>${b.v.name}</b></div></td>
+              <td>${d?d.name:'—'}</td>
+              <td style="font-weight:800;color:${scoreC};font-size:15px">${b.score}</td>
+              <td style="color:${b.harshBrake>5?'var(--red)':'var(--text-primary)'}">${b.harshBrake} مرة</td>
+              <td style="color:${b.harshAccel>4?'var(--red)':'var(--text-primary)'}">${b.harshAccel} مرة</td>
+              <td>${b.sharpTurn} مرة</td>
+              <td style="color:${b.overspeed>5?'var(--red)':'var(--text-primary)'}">${b.overspeed} مرة</td>
+              <td>${badge(rating, b.score>=80?'var(--green)':b.score>=60?'var(--yellow)':'var(--red)')}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const vNames7 = vehicles.map(v=>v.name.replace('السيارة ','س'));
+    charts['beh-radar'] = new Chart(document.getElementById('beh-radar'),{type:'radar',data:{labels:['تقييم','أمان','الالتزام بالسرعة','الفرملة','التسارع'],datasets:vehicles.slice(0,4).map((v,i)=>({label:v.name.replace('السيارة ','س'),data:[behavData[i]?.score||70,70+(v.id%25),80-(behavData[i]?.overspeed||0)*5,100-(behavData[i]?.harshBrake||0)*8,100-(behavData[i]?.harshAccel||0)*8],borderColor:v.color,backgroundColor:v.color+'22',borderWidth:2,pointRadius:4}))},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:9}},grid:{color:'rgba(255,255,255,0.07)'}}}}});
+    charts['beh-bar']   = new Chart(document.getElementById('beh-bar'),{type:'bar',data:{labels:vNames7,datasets:[{label:'فرملة حادة',data:behavData.map(b=>b.harshBrake),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:4},{label:'تسارع عنيف',data:behavData.map(b=>b.harshAccel),backgroundColor:'rgba(245,158,11,0.7)',borderRadius:4},{label:'تجاوز سرعة',data:behavData.map(b=>b.overspeed),backgroundColor:'rgba(139,92,246,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,stacked:false}}}});
+
+  // ============================================================
+  //  GROUP 8 — MAP ROUTES
+  // ============================================================
+  } else if (['map_routes','map_routes_stops'].includes(type)) {
+
+    const withStops = type === 'map_routes_stops';
+    const stopPoints = vehicles.flatMap((v,vi) =>
+      Array.from({length: 2+(vi%3)},(_,si) => ({
+        v, time: `${fmt(8+(v.id+si)%10,(si*17+v.id*5)%60)}`,
+        dur: 10+((v.id+si*7)%40), loc: loc(v.id+si+2)
+      }))
+    );
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('🗺️', vehicles.length, 'مسارات مرسومة على الخريطة', 'blue')}
+        ${kpi('📍', stopPoints.length, 'نقاط توقف مسجلة', 'purple')}
+        ${kpi('📏', `${vehicles.reduce((s,v)=>(s+(monthlyStats[v.rawId]?.km||0)),0).toFixed(0)} كم`, 'إجمالي المسافة المقطوعة', 'green')}
+        ${kpi('⏱️', `${stopPoints.reduce((s,p)=>s+p.dur,0)} د`, 'إجمالي وقت التوقف', 'cyan')}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗺️ خريطة مسارات المركبات (${fromDate} → ${toDate})</div></div>
+        <div style="height:420px;border-radius:8px;overflow:hidden" id="report-map"></div>
+      </div>
+      ${withStops ? `<div class="card">
+        <div class="card-header"><div class="card-title">📍 نقاط التوقف التفصيلية على المسار</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>وقت التوقف</th><th>مدة التوقف</th><th>الموقع / العنوان</th></tr></thead>
+          <tbody>${stopPoints.map((p,i) => `<tr>
+            <td>${i+1}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${p.v.color}"></div><b>${p.v.name}</b></div></td>
+            <td>${fromDate} ${p.time}</td>
+            <td>${p.dur} دقيقة</td>
+            <td style="color:var(--text-secondary);font-size:12px">${p.loc}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>` : ''}`;
+
+    setTimeout(() => {
+      try {
+        const rMap = L.map('report-map',{center:[24.7136,46.6753],zoom:11,attributionControl:false,zoomControl:false});
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(rMap);
+        const pane = rMap.getPane('tilePane');
+        if(pane) pane.style.filter='brightness(0.6) saturate(0.5) hue-rotate(195deg)';
+
+        const baseCoords = [[24.7136,46.6753],[24.7300,46.6800],[24.7500,46.6700],[24.7800,46.7000],[24.8000,46.7200]];
+        vehicles.forEach((v,vi) => {
+          const coords = baseCoords.map(([lat,lng])=>[lat+(vi*0.01+0.005),lng+(vi*0.008)]);
+          L.polyline(coords,{color:v.color,weight:4,opacity:0.85}).addTo(rMap);
+          L.circleMarker(coords[0],{radius:7,color:v.color,fillColor:v.color,fillOpacity:1}).addTo(rMap).bindPopup(`بداية — ${v.name}`);
+          L.circleMarker(coords[coords.length-1],{radius:7,color:'#ef4444',fillColor:'#ef4444',fillOpacity:1}).addTo(rMap).bindPopup(`نهاية — ${v.name}`);
+        });
+        rMap.fitBounds(baseCoords);
+      } catch(e){ console.error('Map error',e); }
+    }, 200);
+
+  // ============================================================
+  //  GROUP 9 — TEMPERATURE / HUMIDITY / SENSORS / ALTITUDE / IGNITION
+  // ============================================================
+  } else if (['temp_humidity','graph_temp','graph_altitude','graph_ignition','graph_sensor'].includes(type)) {
+
+    const isTH   = ['temp_humidity','graph_temp'].includes(type);
+    const isAlt  = type === 'graph_altitude';
+    const isIgn  = type === 'graph_ignition';
+    const label  = isTH?'درجة الحرارة (°C)':isAlt?'الارتفاع (م)':isIgn?'حالة التشغيل':'قراءة الحساس';
+    const unit   = isTH?'°C':isAlt?'م':isIgn?'':' وحدة';
+
+    const sensorReadings = vehicles.map((v,vi) => ({
+      v,
+      cur: isTH ? (18+(v.id*3+vi)%20) : isAlt ? (580+(v.id*10+vi*15)%400) : isIgn ? (v.status==='moving'?1:0) : (50+(v.id*7)%40),
+      min: isTH ? (12+(v.id+vi)%8) : isAlt ? (400+(v.id*5)%100) : 0,
+      max: isTH ? (38+(v.id+vi)%12) : isAlt ? (900+(v.id*8)%300) : isIgn ? 1 : 100,
+      status: isTH && (18+(v.id*3+vi)%20) > 35 ? '⚠️ مرتفع' : '✅ طبيعي'
+    }));
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('🌡️', `${Math.round(sensorReadings.reduce((s,r)=>s+r.cur,0)/sensorReadings.length)} ${unit}`, `متوسط ${label}`, 'blue')}
+        ${kpi('📉', `${Math.min(...sensorReadings.map(r=>r.min))} ${unit}`, `أدنى قيمة مسجلة`, 'cyan')}
+        ${kpi('📈', `${Math.max(...sensorReadings.map(r=>r.max))} ${unit}`, `أعلى قيمة مسجلة`, 'red')}
+        ${kpi('🔧', sensorReadings.filter(r=>r.status.includes('⚠️')).length, 'مركبات تجاوزت الحد', sensorReadings.some(r=>r.status.includes('⚠️'))?'red':'green')}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📈 تطور ${label} خلال الفترة الزمنية</div></div>
+        <div style="height:280px"><canvas id="sens-line"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 قراءات ${label} لكل مركبة (${fromDate})</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>القراءة الحالية</th><th>أدنى قراءة</th><th>أعلى قراءة</th><th>وقت القراءة</th><th>الموقع</th><th>الحالة</th></tr></thead>
+          <tbody>${sensorReadings.map((r,i) => `<tr>
+            <td>${i+1}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${r.v.color}"></div><b>${r.v.name}</b></div></td>
+            <td style="font-weight:800;color:var(--accent-light);font-size:14px">${r.cur} ${unit}</td>
+            <td>${r.min} ${unit}</td>
+            <td>${r.max} ${unit}</td>
+            <td>${fmt(8+(r.v.id%10),(r.v.id*7)%60)}</td>
+            <td style="font-size:11px;color:var(--text-secondary)">${loc(r.v.id)}</td>
+            <td>${badge(r.status.replace('✅ ','').replace('⚠️ ',''), r.status.includes('⚠️')?'var(--red)':'var(--green)')}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const timeLabels = ['06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00'];
+    charts['sens-line'] = new Chart(document.getElementById('sens-line'),{type:'line',data:{labels:timeLabels,datasets:vehicles.slice(0,5).map((v,vi)=>({label:v.name.replace('السيارة ','س'),data:timeLabels.map((_,ti)=>sensorReadings[vi]?sensorReadings[vi].min+((ti*7+vi*5)%(sensorReadings[vi].max-sensorReadings[vi].min)):50),borderColor:v.color,backgroundColor:v.color+'15',fill:false,tension:0.35,pointRadius:3,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}}}});
+
+  // ============================================================
+  //  GROUP 10 — MEDIA GALLERY
+  // ============================================================
+  } else if (['media_gallery'].includes(type)) {
+
+    const mediaItems = vehicles.flatMap((v,vi) =>
+      Array.from({length: 3+(v.id%4)},(_,mi) => ({
+        v, time:`${fmt(7+(v.id+mi)%12,(mi*13+v.id*7)%60)}`, isAlert: (v.id+mi)%5===0,
+        loc: loc(v.id+mi)
+      }))
+    );
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('📸', `${mediaItems.length} صورة`, 'إجمالي الصور الملتقطة', 'blue')}
+        ${kpi('⚠️', mediaItems.filter(m=>m.isAlert).length, 'لقطات إنذار', 'red')}
+        ${kpi('🎥', vehicles.length, 'كاميرات نشطة', 'green')}
+        ${kpi('📅', `${fromDate}`, 'تاريخ الفترة', 'cyan')}
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px">
+        <div class="card-header" style="margin-bottom:16px"><div class="card-title">🖼️ معرض لقطات الكاميرات وإنذارات المركبات</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+          ${mediaItems.map((m,i) => `
+            <div style="background:var(--bg-secondary);border:1px solid ${m.isAlert?'rgba(239,68,68,0.5)':' var(--border)'};border-radius:8px;overflow:hidden">
+              <div style="height:130px;background:${m.v.color}22;display:flex;align-items:center;justify-content:center;position:relative">
+                <span style="font-size:36px">📷</span>
+                ${m.isAlert?`<span style="position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">⚠️ إنذار</span>`:''}
+              </div>
+              <div style="padding:10px">
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary)">${m.v.name}</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">${fromDate} ${m.time}</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.loc}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                  ${badge(m.isAlert?'إنذار':'عادية', m.isAlert?'var(--red)':'var(--green)')}
+                  <a href="#" style="font-size:10px;color:var(--accent-light);font-weight:700">تكبير</a>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+
+  // ============================================================
+  //  FALLBACK — Generic Sensor / Unknown Type
+  // ============================================================
+  } else {
+
+    const displayLabel = document.querySelector(`#rf-type option[value="${type}"]`)?.textContent || 'تقرير مخصص';
+    const sensorData = vehicles.map((v,vi) => ({v, val:(18+(v.id*3+vi)%30).toFixed(1)}));
+
+    area.innerHTML = `
+      <div class="kpi-grid">
+        ${kpi('📊', `${sensorData.length} مركبة`, `تقرير: ${displayLabel}`, 'blue')}
+        ${kpi('🌡️', sensorData[0]?.val||'—', 'أول قراءة مسجلة', 'purple')}
+        ${kpi('🏁', '✅ مكتمل', 'حالة التقرير', 'green')}
+        ${kpi('🔧', vehicles.length, 'أجهزة تم الفحص', 'cyan')}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📈 بيانات ${displayLabel} (${fromDate} → ${toDate})</div></div>
+        <div style="height:260px"><canvas id="gen-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 بيانات تفصيلية — ${displayLabel}</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>المركبة</th><th>القراءة</th><th>وقت القراءة</th><th>الحالة</th><th>الموقع</th></tr></thead>
+          <tbody>${sensorData.map((r,i) => `<tr>
+            <td>${i+1}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${r.v.color}"></div><b>${r.v.name}</b></div></td>
+            <td style="color:var(--accent-light);font-weight:700">${r.val}</td>
+            <td>${fmt(8+(r.v.id%10),(r.v.id*7)%60)}</td>
+            <td>${badge('طبيعي','var(--green)')}</td>
+            <td style="font-size:11px;color:var(--text-secondary)">${loc(r.v.id)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+
+    const timeLabels = ['00:00','04:00','08:00','12:00','16:00','20:00'];
+    charts['gen-chart'] = new Chart(document.getElementById('gen-chart'),{type:'line',data:{labels:timeLabels,datasets:vehicles.slice(0,5).map((v,vi)=>({label:v.name.replace('السيارة ','س'),data:timeLabels.map((_,ti)=>parseFloat(sensorData[vi]?.val||20)+((ti*5+vi*3)%15)-7),borderColor:v.color,backgroundColor:v.color+'10',fill:false,tension:0.3,borderWidth:2,pointRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}}}});
+  }
+}
+
+renderSharedSidebar();
+updateDates();
+</script>
+</body>
+</html>

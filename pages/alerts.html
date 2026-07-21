@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — التنبيهات</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <header class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title">🔔 التنبيهات</div>
+        <div class="topbar-subtitle">سجل كامل لتنبيهات الأسطول</div>
+      </div>
+      <div class="topbar-right">
+        <select class="form-control" id="alert-type-filter" onchange="filterAlerts()" style="min-width:150px">
+          <option value="">جميع الأنواع</option>
+          <option value="speed">تجاوز سرعة</option>
+          <option value="geofence">خروج منطقة</option>
+          <option value="stop">توقف طويل</option>
+          <option value="fuel">وقود منخفض</option>
+        </select>
+        <select class="form-control" id="alert-severity-filter" onchange="filterAlerts()" style="min-width:140px">
+          <option value="">جميع الأولويات</option>
+          <option value="high">عالية</option>
+          <option value="medium">متوسطة</option>
+          <option value="low">منخفضة</option>
+        </select>
+        <button class="btn btn-secondary" onclick="AlertsManager.markAllRead()">✅ قراءة الكل</button>
+      </div>
+    </header>
+    <div class="page-content" id="page-content">
+
+      <!-- Summary KPIs -->
+      <div class="kpi-grid" style="margin-bottom:20px" id="alert-kpis"></div>
+
+      <!-- Alerts List -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 قائمة التنبيهات</div>
+          <span id="alert-filter-count" style="font-size:12px;color:var(--text-secondary)"></span>
+        </div>
+        <div id="alerts-list-full"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/tracking.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/alerts.js"></script>
+<script>
+FleetData.init();
+TrackingEngine.start();
+AlertsManager.init();
+
+function renderSharedSidebar() {
+  const stats = FleetData.getFleetStats();
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-logo"><div class="logo-icon">🚗</div><div class="logo-text"><h1>Fleet Track Pro</h1><span>نظام تتبع الأسطول</span></div></div>
+    <div class="fleet-status-mini">
+      <div class="status-badge moving"><span class="count">${stats.moving}</span>يتحرك</div>
+      <div class="status-badge stopped"><span class="count">${stats.stopped}</span>واقف</div>
+      <div class="status-badge idle"><span class="count">${stats.idle + stats.offline}</span>خامل</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">التتبع الحي</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🗺️</span> لوحة التحكم</a>
+      <div class="nav-section-title">الإدارة</div>
+      <a class="nav-item" href="vehicles.html"><span class="nav-icon">🚗</span> إدارة السيارات</a>
+      <a class="nav-item" href="drivers.html"><span class="nav-icon">👤</span> السائقون</a>
+      <div class="nav-section-title">التحليل</div>
+      <a class="nav-item" href="history.html"><span class="nav-icon">📍</span> تاريخ الرحلات</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📊</span> التقارير</a>
+      <a class="nav-item active" href="alerts.html"><span class="nav-icon">🔔</span> التنبيهات
+        <span class="nav-badge" id="alert-nav-badge">${stats.alerts}</span>
+      </a>
+      <div class="nav-section-title">الإعدادات</div>
+      <a class="nav-item" href="geofence.html"><span class="nav-icon">🏁</span> مناطق الجيوفنس</a>
+      <a class="nav-item" href="account.html"><span class="nav-icon">👤</span> حسابي</a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-avatar">م</div><div class="user-info"><h4>مدير الأسطول</h4><span>متصل الآن</span></div></div></div>`;
+}
+
+function renderKPIs() {
+  const alerts = FleetData.getAlerts();
+  const unread = alerts.filter(a => !a.read).length;
+  const speed = alerts.filter(a => a.type === 'speed').length;
+  const geofence = alerts.filter(a => a.type === 'geofence').length;
+  const fuel = alerts.filter(a => a.type === 'fuel').length;
+  document.getElementById('alert-kpis').innerHTML = `
+    <div class="kpi-card red"><div class="kpi-icon">🔴</div><div class="kpi-value text-red">${unread}</div><div class="kpi-label">غير مقروءة</div></div>
+    <div class="kpi-card yellow"><div class="kpi-icon">🚨</div><div class="kpi-value text-yellow">${speed}</div><div class="kpi-label">تجاوز سرعة</div></div>
+    <div class="kpi-card purple"><div class="kpi-icon">🏁</div><div class="kpi-value" style="color:var(--purple)">${geofence}</div><div class="kpi-label">خروج منطقة</div></div>
+    <div class="kpi-card cyan"><div class="kpi-icon">⛽</div><div class="kpi-value" style="color:var(--cyan)">${fuel}</div><div class="kpi-label">وقود منخفض</div></div>`;
+}
+
+function filterAlerts() {
+  const type = document.getElementById('alert-type-filter').value;
+  const severity = document.getElementById('alert-severity-filter').value;
+  let alerts = FleetData.getAlerts();
+  if (type) alerts = alerts.filter(a => a.type === type);
+  if (severity) alerts = alerts.filter(a => a.severity === severity);
+
+  const ALERT_ICONS = { speed: '🚨', geofence: '🏁', stop: '⏸️', fuel: '⛽' };
+  const ALERT_LABELS = { speed: 'تجاوز سرعة', geofence: 'خروج منطقة', stop: 'توقف طويل', fuel: 'وقود منخفض' };
+  const SEVERITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#06b6d4' };
+
+  const container = document.getElementById('alerts-list-full');
+  document.getElementById('alert-filter-count').textContent = `${alerts.length} تنبيه`;
+
+  if (alerts.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔔</div><h3>لا توجد تنبيهات</h3><p>لا توجد تنبيهات تطابق المرشح المحدد</p></div>`;
+    return;
+  }
+
+  container.innerHTML = alerts.map(a => {
+    const dt = new Date(a.timestamp);
+    const timeStr = dt.toLocaleString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const sevColor = SEVERITY_COLORS[a.severity] || '#6b7280';
+    return `
+      <div class="alert-item" id="alert-${a.id}" style="${!a.read ? 'border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.05)' : ''}">
+        <div class="alert-icon ${a.type}" style="background:${sevColor}22; border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
+          <span style="font-size:16px">${ALERT_ICONS[a.type] || '⚠️'}</span>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title" style="color:${!a.read ? 'var(--text-primary)' : 'var(--text-secondary)'}">
+            ${ALERT_LABELS[a.type] || a.type} — ${a.vehicleName}
+          </div>
+          <div class="alert-desc">${a.message}</div>
+          <div class="alert-time">🪪 ${a.vehiclePlate} • 🕐 ${timeStr}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${sevColor}22;color:${sevColor}">
+            ${a.severity === 'high' ? '🔴 عالي' : a.severity === 'medium' ? '🟡 متوسط' : '🔵 منخفض'}
+          </span>
+          ${!a.read ? `<button class="btn btn-sm btn-secondary" onclick="AlertsManager.markRead('${a.id}')">قراءة</button>` : '<span style="font-size:10px;color:var(--text-muted)">✓ مقروء</span>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+renderSharedSidebar();
+renderKPIs();
+filterAlerts();
+
+// Refresh on new alerts
+TrackingEngine.on('alert', () => {
+  renderKPIs();
+  filterAlerts();
+  AlertsManager.updateAlertBadge();
+});
+</script>
+</body>
+</html>

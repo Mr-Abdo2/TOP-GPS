@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — لوحة التحكم</title>
+  <meta name="description" content="نظام تتبع أسطول السيارات المتكامل مع خرائط تفاعلية في الوقت الفعلي">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* Dark map tile override */
+    .leaflet-tile-pane { filter: brightness(0.65) saturate(0.6) hue-rotate(195deg); }
+    .leaflet-control-zoom a {
+      background: var(--bg-card) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--border) !important;
+    }
+    .leaflet-popup-content-wrapper {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      padding: 0;
+      overflow: hidden;
+    }
+    .leaflet-popup-content { margin: 14px; }
+    .leaflet-popup-tip-container { display: none; }
+    .fleet-popup .leaflet-popup-content-wrapper { border: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Topbar -->
+    <header class="topbar" id="topbar"></header>
+
+    <!-- Page Content (no padding — map fills space) -->
+    <div class="page-content no-padding" style="padding:16px;overflow-y:auto;" id="page-content">
+      <div class="loader"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/data.js"></script>
+<script src="js/tracking.js"></script>
+<script src="js/map.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Track Pro — مناطق الجيوفنس</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .gf-layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - var(--topbar-h)); }
+    .gf-panel { background: var(--bg-secondary); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .gf-map { position: relative; }
+    #gf-map { width: 100%; height: 100%; }
+    .leaflet-tile-pane { filter: brightness(0.65) saturate(0.6) hue-rotate(195deg); }
+    .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--text-primary) !important; border-color: var(--border) !important; }
+    .leaflet-popup-content-wrapper { background: white; border-radius: 10px; }
+    .leaflet-popup-tip-container { display: none; }
+    .gf-item {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+      margin-bottom: 8px; transition: all 0.2s; cursor: pointer;
+    }
+    .gf-item:hover { border-color: rgba(99,179,237,0.25); }
+    .gf-item.active { border-color: var(--accent); background: rgba(59,130,246,0.07); }
+    .gf-color-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    .gf-toggle { position: relative; width: 36px; height: 20px; cursor: pointer; }
+    .gf-toggle input { display: none; }
+    .gf-toggle-slider { position: absolute; inset: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; transition: 0.3s; }
+    .gf-toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; background: var(--text-muted); border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+    .gf-toggle input:checked + .gf-toggle-slider { background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.4); }
+    .gf-toggle input:checked + .gf-toggle-slider::before { transform: translateX(16px); background: var(--green); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <header class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title">🏁 مناطق الجيوفنس</div>
+        <div class="topbar-subtitle">إدارة المناطق الجغرافية المسموح بها والمحظورة</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openAddGFModal()">➕ إضافة منطقة</button>
+      </div>
+    </header>
+
+    <div class="gf-layout">
+      <!-- Left Panel -->
+      <div class="gf-panel">
+        <div style="padding:16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">المناطق المحددة</div>
+          <div style="font-size:12px;color:var(--text-secondary)">اضغط على منطقة لتركيز الخريطة عليها</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:12px" id="gf-list"></div>
+        <div style="padding:12px;border-top:1px solid var(--border);background:var(--bg-card)">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:700;text-transform:uppercase">إضافة منطقة سريعة</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" style="flex:1" onclick="addQuickGF('allowed')">✅ مسموح</button>
+            <button class="btn btn-danger btn-sm" style="flex:1" onclick="addQuickGF('forbidden')">⛔ محظور</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="gf-map">
+        <div id="gf-map"></div>
+        <div style="position:absolute;bottom:12px;left:12px;z-index:1000;background:rgba(13,19,35,0.92);border:1px solid var(--border);border-radius:10px;padding:10px 14px;backdrop-filter:blur(10px)">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px">المفتاح</div>
+          <div class="legend-item" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-secondary);margin-bottom:4px"><div style="width:24px;height:3px;background:#22c55e;border-radius:2px"></div>منطقة مسموح بها</div>
+          <div class="legend-item" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-secondary)"><div style="width:24px;height:3px;background:#ef4444;border-radius:2px;border-top:2px dashed #ef4444"></div>منطقة محظورة</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+
+<!-- Add GF Modal -->
+<div class="modal-overlay" id="gf-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">إضافة منطقة جيوفنس</div>
+      <button class="modal-close" onclick="closeGFModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">اسم المنطقة *</label><input type="text" class="form-control" id="gf-name" placeholder="مثال: منطقة العمل الرئيسية"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">النوع</label>
+          <select class="form-control" id="gf-type">
+            <option value="allowed">✅ مسموح بها</option>
+            <option value="forbidden">⛔ محظورة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">نصف القطر (متر)</label>
+          <input type="number" class="form-control" id="gf-radius" value="2000" min="100" max="50000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">خط العرض (Lat)</label><input type="number" class="form-control" id="gf-lat" value="30.044" step="0.0001" dir="ltr"></div>
+        <div class="form-group"><label class="form-label">خط الطول (Lng)</label><input type="number" class="form-control" id="gf-lng" value="31.235" step="0.0001" dir="ltr"></div>
+      </div>
+      <div class="form-group"><label class="form-label">لون المنطقة</label><input type="color" class="form-control" id="gf-color" value="#22c55e" style="height:42px;padding:4px 8px"></div>
+      <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:var(--text-secondary)">
+        💡 تلميح: يمكنك الضغط على الخريطة في الصفحة الرئيسية للحصول على الإحداثيات
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeGFModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveGF()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/tracking.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/alerts.js"></script>
+<script>
+FleetData.init();
+TrackingEngine.start();
+AlertsManager.init();
+
+let gfMap = null;
+let gfCircles = {};
+
+function renderSharedSidebar() {
+  const stats = FleetData.getFleetStats();
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-logo"><div class="logo-icon">🚗</div><div class="logo-text"><h1>Fleet Track Pro</h1><span>نظام تتبع الأسطول</span></div></div>
+    <div class="fleet-status-mini">
+      <div class="status-badge moving"><span class="count">${stats.moving}</span>يتحرك</div>
+      <div class="status-badge stopped"><span class="count">${stats.stopped}</span>واقف</div>
+      <div class="status-badge idle"><span class="count">${stats.idle + stats.offline}</span>خامل</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">التتبع الحي</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🗺️</span> لوحة التحكم</a>
+      <div class="nav-section-title">الإدارة</div>
+      <a class="nav-item" href="vehicles.html"><span class="nav-icon">🚗</span> إدارة السيارات</a>
+      <a class="nav-item" href="drivers.html"><span class="nav-icon">👤</span> السائقون</a>
+      <div class="nav-section-title">التحليل</div>
+      <a class="nav-item" href="history.html"><span class="nav-icon">📍</span> تاريخ الرحلات</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📊</span> التقارير</a>
+      <a class="nav-item" href="alerts.html"><span class="nav-icon">🔔</span> التنبيهات<span class="nav-badge" id="alert-nav-badge">${stats.alerts}</span></a>
+      <div class="nav-section-title">الإعدادات</div>
+      <a class="nav-item active" href="geofence.html"><span class="nav-icon">🏁</span> مناطق الجيوفنس</a>
+      <a class="nav-item" href="account.html"><span class="nav-icon">👤</span> حسابي</a>
+    </nav>
+    <div class="sidebar-footer"><div class="user-card"><div class="user-avatar">م</div><div class="user-info"><h4>مدير الأسطول</h4><span>متصل الآن</span></div></div></div>`;
+}
+
+function initGFMap() {
+  gfMap = L.map('gf-map', { center: [30.044, 31.235], zoom: 11, zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(gfMap);
+  L.control.zoom({ position: 'bottomright' }).addTo(gfMap);
+
+  // Click to get coordinates
+  gfMap.on('click', (e) => {
+    document.getElementById('gf-lat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('gf-lng').value = e.latlng.lng.toFixed(6);
+    AlertsManager.showToast(`إحداثيات محددة: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`, 'success', '📍');
+  });
+
+  drawAllGF();
+}
+
+function drawAllGF() {
+  Object.values(gfCircles).forEach(c => gfMap.removeLayer(c));
+  gfCircles = {};
+  const geofences = FleetData.getGeofences();
+  geofences.forEach(gf => {
+    const circle = L.circle([gf.lat, gf.lng], {
+      radius: gf.radius,
+      color: gf.color,
+      fillColor: gf.color,
+      fillOpacity: gf.active ? 0.1 : 0.03,
+      weight: 2,
+      dashArray: gf.type === 'forbidden' ? '8 4' : '4 4',
+      opacity: gf.active ? 1 : 0.3
+    }).addTo(gfMap).bindPopup(`<b>${gf.name}</b><br>النوع: ${gf.type === 'allowed' ? 'مسموح' : 'محظور'}<br>نصف القطر: ${gf.radius} متر`);
+    gfCircles[gf.id] = circle;
+  });
+}
+
+function renderGFList() {
+  const geofences = FleetData.getGeofences();
+  const container = document.getElementById('gf-list');
+  if (geofences.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏁</div><p>لا توجد مناطق محددة بعد</p></div>`;
+    return;
+  }
+  container.innerHTML = geofences.map(gf => `
+    <div class="gf-item" id="gfi-${gf.id}" onclick="focusGF('${gf.id}')">
+      <div class="gf-color-dot" style="background:${gf.color}"></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${gf.name}</div>
+        <div style="font-size:11px;color:var(--text-secondary)">${gf.type === 'allowed' ? '✅ مسموح' : '⛔ محظور'} • ${gf.radius >= 1000 ? (gf.radius/1000).toFixed(1) + ' كم' : gf.radius + ' م'} نصف قطر</div>
+      </div>
+      <label class="gf-toggle" onclick="event.stopPropagation()">
+        <input type="checkbox" ${gf.active ? 'checked' : ''} onchange="toggleGF('${gf.id}', this.checked)">
+        <div class="gf-toggle-slider"></div>
+      </label>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteGF('${gf.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+function focusGF(id) {
+  const gf = FleetData.getGeofences().find(g => g.id === id);
+  if (!gf) return;
+  gfMap.setView([gf.lat, gf.lng], 13, { animate: true });
+  if (gfCircles[id]) gfCircles[id].openPopup();
+  document.querySelectorAll('.gf-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`gfi-${id}`)?.classList.add('active');
+}
+
+function toggleGF(id, active) {
+  const geofences = FleetData.getGeofences();
+  const gf = geofences.find(g => g.id === id);
+  if (gf) { gf.active = active; FleetData.saveGeofences(geofences); drawAllGF(); }
+  AlertsManager.showToast(`${active ? 'تفعيل' : 'إيقاف'} المنطقة`, active ? 'success' : 'warning', active ? '✅' : '⏸️');
+}
+
+function deleteGF(id) {
+  if (!confirm('هل تريد حذف هذه المنطقة؟')) return;
+  const geofences = FleetData.getGeofences().filter(g => g.id !== id);
+  FleetData.saveGeofences(geofences);
+  drawAllGF();
+  renderGFList();
+  AlertsManager.showToast('تم حذف المنطقة', 'success', '🗑️');
+}
+
+function openAddGFModal() { document.getElementById('gf-modal').classList.add('open'); }
+function closeGFModal() { document.getElementById('gf-modal').classList.remove('open'); }
+
+function saveGF() {
+  const name = document.getElementById('gf-name').value.trim();
+  if (!name) { AlertsManager.showToast('يرجى إدخال اسم المنطقة', 'error', '❌'); return; }
+  const geofences = FleetData.getGeofences();
+  geofences.push({
+    id: 'gf' + Date.now(),
+    name,
+    type: document.getElementById('gf-type').value,
+    color: document.getElementById('gf-color').value,
+    lat: parseFloat(document.getElementById('gf-lat').value),
+    lng: parseFloat(document.getElementById('gf-lng').value),
+    radius: parseInt(document.getElementById('gf-radius').value),
+    active: true
+  });
+  FleetData.saveGeofences(geofences);
+  drawAllGF();
+  renderGFList();
+  closeGFModal();
+  AlertsManager.showToast('تمت إضافة المنطقة بنجاح', 'success', '✅');
+}
+
+function addQuickGF(type) {
+  const center = gfMap.getCenter();
+  const geofences = FleetData.getGeofences();
+  geofences.push({
+    id: 'gf' + Date.now(),
+    name: `منطقة ${type === 'allowed' ? 'مسموح' : 'محظور'} ${geofences.length + 1}`,
+    type,
+    color: type === 'allowed' ? '#22c55e' : '#ef4444',
+    lat: center.lat,
+    lng: center.lng,
+    radius: 1500,
+    active: true
+  });
+  FleetData.saveGeofences(geofences);
+  drawAllGF();
+  renderGFList();
+  AlertsManager.showToast('تمت إضافة المنطقة على مركز الخريطة الحالي', 'success', '✅');
+}
+
+renderSharedSidebar();
+initGFMap();
+renderGFList();
+</script>
+</body>
+</html>
