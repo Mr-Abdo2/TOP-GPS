@@ -27,12 +27,19 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Prepare Web Assets
+      - name: Prepare Web Assets for Android
         run: |
-          node -e "const fs = require('fs'); if (!fs.existsSync('www')) fs.mkdirSync('www'); fs.copyFileSync('tracker.html', 'www/index.html'); fs.copyFileSync('manifest.json', 'www/manifest.json');"
-          npx cap copy android
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const target = 'android/app/src/main/assets/public';
+            if (!fs.existsSync(target)) fs.mkdirSync(target, { recursive: true });
+            fs.copyFileSync('tracker.html', path.join(target, 'index.html'));
+            fs.copyFileSync('manifest.json', path.join(target, 'manifest.json'));
+            console.log('✅ Web assets copied directly to Android assets/public');
+          "
 
-      - name: Build Android APK
+      - name: Build Android APK with Gradle
         run: |
           cd android
           chmod +x gradlew
