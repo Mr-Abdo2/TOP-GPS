@@ -29,10 +29,8 @@ jobs:
 
       - name: Prepare Web Assets
         run: |
-          mkdir -p www
-          cp tracker.html www/index.html
-          cp manifest.json www/manifest.json
-          npx cap sync android
+          node -e "const fs = require('fs'); if (!fs.existsSync('www')) fs.mkdirSync('www'); fs.copyFileSync('tracker.html', 'www/index.html'); fs.copyFileSync('manifest.json', 'www/manifest.json');"
+          npx cap copy android
 
       - name: Build Android APK
         run: |
