@@ -1,0 +1,8 @@
+{
+  "appId": "pro.topgps.tracker",
+  "appName": "TOP-GPS Tracker",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

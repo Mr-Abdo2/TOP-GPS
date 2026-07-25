@@ -1,0 +1,16 @@
+{
+  "name": "TOP-GPS Tracker",
+  "short_name": "TOP-GPS",
+  "description": "تطبيق تتبع أسطول السيارات المباشر للسائقين",
+  "start_url": "/tracker.html",
+  "display": "standalone",
+  "background_color": "#0b132b",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/192/000000/navigation.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

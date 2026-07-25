@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TOP-GPS — تطبيق تتبع السائقين</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0b132b;
+      --card-bg: #1c2541;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.3);
+      --text: #ffffff;
+      --subtext: #94a3b8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 16px;
+    }
+
+    .app-header {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .app-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 18px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 12px;
+    }
+
+    .app-logo span {
+      font-size: 24px;
+    }
+
+    .app-logo h1 {
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-title {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .app-subtitle {
+      font-size: 13px;
+      color: var(--subtext);
+      margin-top: 4px;
+    }
+
+    .main-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .input-group {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--subtext);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .input-group input, .input-group select {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: white;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .toggle-container {
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .track-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.2), 0 8px 25px rgba(16, 185, 129, 0.4);
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .track-btn.active {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2), 0 8px 25px rgba(239, 68, 68, 0.4);
+      animation: pulseActive 2s infinite;
+    }
+
+    @keyframes pulseActive {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2), 0 8px 25px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0.1), 0 8px 35px rgba(239, 68, 68, 0.6); }
+    }
+
+    .track-btn span {
+      font-size: 28px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #6b7280;
+    }
+
+    .status-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .metric-box {
+      background: rgba(0,0,0,0.2);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .metric-box label {
+      font-size: 11px;
+      color: var(--subtext);
+      display: block;
+    }
+
+    .metric-box val {
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .footer-info {
+      text-align: center;
+      font-size: 12px;
+      color: var(--subtext);
+    }
+
+    .install-banner {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 12px;
+      margin-bottom: 15px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <div class="app-logo">
+      <span>🚗</span>
+      <h1>TOP-GPS Tracker</h1>
+    </div>
+    <div class="app-title">تطبيق تتبع السائقين</div>
+    <div class="app-subtitle">إرسال الموقع الحي تلقائياً للوحة التحكم</div>
+  </div>
+
+  <div class="main-card">
+
+    <div class="install-banner" id="installBanner">
+      📲 اضغط "إضافة إلى الشاشة الرئيسية" لاستخدام التطبيق كـ App مستمر بدون متصفح!
+    </div>
+
+    <div class="input-group">
+      <label>اسم السائق أو رقم السيارة</label>
+      <input type="text" id="deviceId" value="سيارة 1" placeholder="مثال: أحمد - ر ه س 4491">
+    </div>
+
+    <div class="toggle-container">
+      <button class="track-btn" id="toggleBtn" onclick="toggleTracking()">
+        <span id="btnIcon">📡</span>
+        <div id="btnText">بدء التتبع</div>
+      </button>
+
+      <div class="status-badge">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">التتبع متوقف</span>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-box">
+        <label>السرعة الحالية</label>
+        <val id="speedVal">0 كم/س</val>
+      </div>
+      <div class="metric-box">
+        <label>دقة الـ GPS</label>
+        <val id="accuracyVal">--</val>
+      </div>
+      <div class="metric-box">
+        <label>آخر إرسال</label>
+        <val id="timeVal">--</val>
+      </div>
+      <div class="metric-box">
+        <label>حالة الإرسال</label>
+        <val id="sentVal" style="color:var(--accent)">جاهز</val>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-info">
+    TOP-GPS Fleet Management © 2026<br>
+    تطبيق رسمي مخصص لأسطول السيارات
+  </div>
+
+  <script>
+    let isTracking = false;
+    let watchId = null;
+    let sendInterval = null;
+    let lastPos = null;
+
+    const SERVER_TRACK_URL = window.location.protocol + '//' + window.location.hostname + ':5055';
+
+    function toggleTracking() {
+      if (!isTracking) {
+        startTracking();
+      } else {
+        stopTracking();
+      }
+    }
+
+    function startTracking() {
+      if (!navigator.geolocation) {
+        alert('متصفحك أو تليفونك لا يدعم نظام تحديد المواقع GPS');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          isTracking = true;
+          updateUI(true);
+          sendPosition(pos);
+
+          // Watch position continuously
+          watchId = navigator.geolocation.watchPosition(
+            (p) => {
+              lastPos = p;
+              updateMetrics(p);
+            },
+            (err) => console.error('GPS Error:', err),
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+          );
+
+          // Send position to server every 5 seconds automatically
+          sendInterval = setInterval(() => {
+            if (lastPos) sendPosition(lastPos);
+          }, 5000);
+        },
+        (err) => {
+          alert('يرجى السماح بصلاحية الموقع (Location Permission) لبدء التتبع: ' + err.message);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    function stopTracking() {
+      isTracking = false;
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (sendInterval) clearInterval(sendInterval);
+      updateUI(false);
+    }
+
+    function sendPosition(pos) {
+      const deviceId = document.getElementById('deviceId').value || 'driver-1';
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const speed = Math.round((pos.coords.speed || 0) * 3.6);
+      const altitude = Math.round(pos.coords.altitude || 0);
+      const bearing = Math.round(pos.coords.heading || 0);
+      const accuracy = Math.round(pos.coords.accuracy || 0);
+
+      const payload = new URLSearchParams({
+        id: deviceId,
+        lat: lat,
+        lon: lon,
+        speed: speed,
+        altitude: altitude,
+        bearing: bearing,
+        accuracy: accuracy,
+        timestamp: Math.floor(Date.now() / 1000)
+      });
+
+      fetch(SERVER_TRACK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload.toString()
+      })
+      .then(res => {
+        document.getElementById('sentVal').textContent = '✅ تم الإرسال';
+        document.getElementById('sentVal').style.color = '#10b981';
+        document.getElementById('timeVal').textContent = new Date().toLocaleTimeString('ar-SA');
+      })
+      .catch(err => {
+        document.getElementById('sentVal').textContent = '❌ تعذر الاتصال';
+        document.getElementById('sentVal').style.color = '#ef4444';
+      });
+    }
+
+    function updateMetrics(pos) {
+      const speed = Math.round((pos.coords.speed || 0) * 3.6);
+      const acc = Math.round(pos.coords.accuracy || 0);
+      document.getElementById('speedVal').textContent = speed + ' كم/س';
+      document.getElementById('accuracyVal').textContent = acc + ' متر';
+    }
+
+    function updateUI(active) {
+      const btn = document.getElementById('toggleBtn');
+      const text = document.getElementById('btnText');
+      const icon = document.getElementById('btnIcon');
+      const dot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+
+      if (active) {
+        btn.classList.add('active');
+        text.textContent = 'إيقاف التتبع';
+        icon.textContent = '⏹️';
+        dot.classList.add('active');
+        statusText.textContent = 'التتبع الحي شغال تلقائياً 🟢';
+      } else {
+        btn.classList.remove('active');
+        text.textContent = 'بدء التتبع';
+        icon.textContent = '📡';
+        dot.classList.remove('active');
+        statusText.textContent = 'التتبع متوقف';
+      }
+    }
+
+    // PWA Install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      document.getElementById('installBanner').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TOP-GPS Tracker</string>
+    <string name="title_activity_main">TOP-GPS Tracker</string>
+    <string name="package_name">pro.topgps.tracker</string>
+    <string name="custom_url_scheme">pro.topgps.tracker</string>
+</resources>
