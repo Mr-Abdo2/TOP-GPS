@@ -1,9 +1,12 @@
-name: Build Android APK
+name: Build Android APK & Release
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -36,10 +39,20 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../TOP-GPS-Tracker.apk
 
-      - name: Upload TOP-GPS-Tracker.apk
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: TOP-GPS-Tracker-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          path: TOP-GPS-Tracker.apk
+
+      - name: Create Direct GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.0
+          name: "📱 TOP-GPS Tracker App v1.0.0"
+          body: "تطبيق تتبع السائقين المباشر لأجهزة الأندرويد — قم بتنزيل ملف TOP-GPS-Tracker.apk وتثبيته مباشرة على التليفون!"
+          files: TOP-GPS-Tracker.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
