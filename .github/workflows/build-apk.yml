@@ -19,15 +19,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Prepare Web Assets for Android
+      - name: Prepare Assets for Android App
         run: |
           node -e "
             const fs = require('fs');
@@ -36,16 +28,16 @@ jobs:
             if (!fs.existsSync(target)) fs.mkdirSync(target, { recursive: true });
             fs.copyFileSync('tracker.html', path.join(target, 'index.html'));
             fs.copyFileSync('manifest.json', path.join(target, 'manifest.json'));
-            console.log('✅ Web assets copied directly to Android assets/public');
+            console.log('✅ Web assets ready in android/app/src/main/assets/public');
           "
 
-      - name: Build Android APK with Gradle
+      - name: Build APK with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload TOP-GPS-Tracker.apk
         uses: actions/upload-artifact@v4
         with:
           name: TOP-GPS-Tracker-APK
