@@ -65,9 +65,9 @@ jobs:
       - name: Create Direct GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v5.0.0
-          name: "📱 TOP-GPS Master Mobile Responsive v5.0.0"
-          body: "إصلاح شامل لمنع أي سحب أفقي (Zero Horizontal Scroll) وضبط أحجام الخطوط والنماذج والجداول 100% على كافة صفحات التطبيق (التقارير، السيارات، التنبيهات، السائقين، الجيوفنس، حسابي والصفحة الرئيسية)!"
+          tag_name: v6.0.0
+          name: "📱 TOP-GPS Fixed Reports & Form Scaling v6.0.0"
+          body: "إصلاح جذري لصفحة التقارير وكافة الصفحات — حقول التاريخ واضحة ومكشوفة بالكامل، زر توليد التقرير الأكبر (100% Width) ظاهر بوضوح، مع التصفح العمودي السلس وبدون أي تداخل أزرار أو هيدرات!"
           files: TOP-GPS-Full-System.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

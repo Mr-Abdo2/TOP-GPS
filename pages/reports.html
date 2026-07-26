@@ -332,6 +332,108 @@
     .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
     .stat-row:last-child { border-bottom: none; }
     .rank-number { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+
+    /* ===== MOBILE RESPONSIVE OVERRIDES FOR REPORTS PAGE ===== */
+    @media (max-width: 768px) {
+      body, .main-content, .page-content {
+        overflow-y: auto !important;
+        height: auto !important;
+        padding-bottom: 85px !important;
+      }
+
+      .topbar {
+        position: relative !important;
+        height: auto !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 10px 14px !important;
+      }
+      .topbar-right {
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+      }
+      .topbar-right select, .topbar-right button {
+        flex: 1 1 auto !important;
+        font-size: 11px !important;
+      }
+
+      .rpt-config-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 12px 14px !important;
+      }
+      .rpt-config-header-right {
+        font-size: 13px !important;
+        text-align: center !important;
+      }
+      .rpt-config-header-left {
+        flex: 1 !important;
+        text-align: center !important;
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+      }
+
+      .rpt-config-body {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 12px !important;
+      }
+
+      .rpt-field {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 4px !important;
+        margin-bottom: 12px !important;
+      }
+
+      .rpt-field-label {
+        min-width: 0 !important;
+        text-align: right !important;
+        font-size: 12px !important;
+        margin-bottom: 2px !important;
+      }
+
+      .rpt-field-input, .rpt-field-select, .rpt-multiselect-header {
+        width: 100% !important;
+        font-size: 13px !important;
+        padding: 8px 10px !important;
+        box-sizing: border-box !important;
+      }
+
+      .rpt-time-row {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        width: 100% !important;
+      }
+      .rpt-time-row input[type="date"] {
+        flex: 1 1 110px !important;
+        font-size: 11px !important;
+        padding: 6px 4px !important;
+      }
+      .rpt-time-select {
+        width: 48px !important;
+        font-size: 11px !important;
+        padding: 6px 2px !important;
+      }
+
+      .rpt-config-footer {
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 14px 12px !important;
+      }
+      .btn-generate, .btn-cancel {
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 14px !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+      }
+    }
   </style>
 </head>
 <body>
