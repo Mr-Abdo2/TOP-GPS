@@ -7164,3 +7164,99 @@ function populateInfoTable() {
     </tr>
   `;
 }
+
+// =========================================================
+//  MOBILE BOTTOM NAVIGATION BAR & VIEW SWITCHER INJECTOR
+// =========================================================
+(function initMobileUI() {
+  function injectMobileNav() {
+    if (document.getElementById('mobile-bottom-nav')) return;
+
+    // Detect if inside /pages/ or root
+    const isInsidePages = window.location.pathname.includes('/pages/');
+    const basePath = isInsidePages ? '' : 'pages/';
+    const rootPath = isInsidePages ? '../index.html' : 'index.html';
+
+    const currentPath = window.location.pathname;
+
+    const navItems = [
+      { name: 'الخريطة', icon: '🗺️', url: rootPath, key: 'index' },
+      { name: 'السيارات', icon: '🚗', url: basePath + 'vehicles.html', key: 'vehicles' },
+      { name: 'التنبيهات', icon: '🔔', url: basePath + 'alerts.html', key: 'alerts' },
+      { name: 'التقارير', icon: '📊', url: basePath + 'reports.html', key: 'reports' },
+      { name: 'حسابي', icon: '👤', url: basePath + 'account.html', key: 'account' }
+    ];
+
+    const nav = document.createElement('nav');
+    nav.id = 'mobile-bottom-nav';
+    nav.className = 'mobile-nav-bar';
+
+    navItems.forEach(item => {
+      const a = document.createElement('a');
+      a.href = item.url;
+      a.className = 'mobile-nav-item';
+      if (
+        (item.key === 'index' && (currentPath.endsWith('index.html') || currentPath.endsWith('/') || currentPath.endsWith('GPS/'))) ||
+        (currentPath.includes(item.key))
+      ) {
+        a.classList.add('active');
+      }
+
+      a.innerHTML = `
+        <span class="nav-icon">${item.icon}</span>
+        <span>${item.name}</span>
+      `;
+      nav.appendChild(a);
+    });
+
+    document.body.appendChild(nav);
+  }
+
+  function injectDashboardSwitcher() {
+    const isDashboard = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname.endsWith('GPS/');
+    if (!isDashboard || document.getElementById('mobile-view-switcher')) return;
+
+    const container = document.querySelector('.main-content') || document.body;
+    if (!container) return;
+
+    const switcher = document.createElement('div');
+    switcher.id = 'mobile-view-switcher';
+    switcher.className = 'mobile-view-toggle';
+    switcher.innerHTML = `
+      <button class="mobile-view-btn active" id="btn-show-map" onclick="switchMobileView('map')">🗺️ الخريطة بالكامل</button>
+      <button class="mobile-view-btn" id="btn-show-list" onclick="switchMobileView('list')">📋 قائمة السيارات</button>
+    `;
+
+    container.insertBefore(switcher, container.firstChild);
+  }
+
+  window.switchMobileView = function(view) {
+    const mapEl = document.querySelector('#map-container, .map-wrapper, #map');
+    const panelEl = document.querySelector('.vehicle-panel, .side-panel, .panel-card');
+    const btnMap = document.getElementById('btn-show-map');
+    const btnList = document.getElementById('btn-show-list');
+
+    if (view === 'map') {
+      if (mapEl) mapEl.style.display = 'block';
+      if (panelEl) panelEl.style.display = 'none';
+      if (btnMap) btnMap.classList.add('active');
+      if (btnList) btnList.classList.remove('active');
+    } else {
+      if (mapEl) mapEl.style.display = 'none';
+      if (panelEl) panelEl.style.display = 'block';
+      if (btnMap) btnMap.classList.remove('active');
+      if (btnList) btnList.classList.add('active');
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      injectMobileNav();
+      injectDashboardSwitcher();
+    });
+  } else {
+    injectMobileNav();
+    injectDashboardSwitcher();
+  }
+})();
+
