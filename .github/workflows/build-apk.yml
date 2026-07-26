@@ -1,4 +1,4 @@
-name: Build Android APK & Release
+name: Build Full TOP-GPS Android App
 
 on:
   push:
@@ -22,16 +22,31 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Prepare Assets for Android App
+      - name: Prepare FULL TOP-GPS Web System for Android App
         run: |
           node -e "
             const fs = require('fs');
             const path = require('path');
             const target = 'android/app/src/main/assets/public';
-            if (!fs.existsSync(target)) fs.mkdirSync(target, { recursive: true });
-            fs.copyFileSync('tracker.html', path.join(target, 'index.html'));
-            fs.copyFileSync('manifest.json', path.join(target, 'manifest.json'));
-            console.log('✅ Web assets ready in android/app/src/main/assets/public');
+
+            function copyFolderSync(from, to) {
+              if (!fs.existsSync(to)) fs.mkdirSync(to, { recursive: true });
+              fs.readdirSync(from).forEach(element => {
+                const stat = fs.lstatSync(path.join(from, element));
+                if (stat.isFile()) {
+                  if (!element.endsWith('.apk') && !element.endsWith('.log')) {
+                    fs.copyFileSync(path.join(from, element), path.join(to, element));
+                  }
+                } else if (stat.isDirectory()) {
+                  if (element !== 'node_modules' && element !== 'android' && element !== '.git' && element !== '.github' && element !== 'www') {
+                    copyFolderSync(path.join(from, element), path.join(to, element));
+                  }
+                }
+              });
+            }
+
+            copyFolderSync('.', target);
+            console.log('✅ Full TOP-GPS Dashboard System copied to Android app assets!');
           "
 
       - name: Build APK with Gradle
@@ -39,20 +54,20 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../TOP-GPS-Tracker.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../TOP-GPS-Full-System.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TOP-GPS-Tracker-APK
-          path: TOP-GPS-Tracker.apk
+          name: TOP-GPS-Full-System-APK
+          path: TOP-GPS-Full-System.apk
 
       - name: Create Direct GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.0
-          name: "📱 TOP-GPS Tracker App v1.0.0"
-          body: "تطبيق تتبع السائقين المباشر لأجهزة الأندرويد — قم بتنزيل ملف TOP-GPS-Tracker.apk وتثبيته مباشرة على التليفون!"
-          files: TOP-GPS-Tracker.apk
+          tag_name: v2.0.0
+          name: "📱 TOP-GPS Full System App v2.0.0"
+          body: "نظام TOP-GPS المتكامل لإدارة وتتبع أسطول السيارات بالكامل — خريطة حية، سيارات، سائقين، تقارير، وتنبيهات بملف APK مباشر!"
+          files: TOP-GPS-Full-System.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
