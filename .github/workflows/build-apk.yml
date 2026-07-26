@@ -65,9 +65,9 @@ jobs:
       - name: Create Direct GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v3.0.0
-          name: "📱 TOP-GPS Native Mobile UI System v3.0.0"
-          body: "تحديث شامل وواجهة موبايل مخصصة 100% — شريط تصفح سفلي (Bottom Nav)، زر تنقل بين الخريطة وقائمة السيارات، استغلال مريح للشاشة وتجاوب كامل بدون أي تداخل نصوص!"
+          tag_name: v4.0.0
+          name: "📱 TOP-GPS Native TMT-Style Mobile UI v4.0.0"
+          body: "إصلاح جذري كامل لواجهة الموبايل (نفس تصميم TMTGPS المرجعي بالضبط) — الخريطة تملا الشاشة 100%، هيدر شفاف أنيق فوق الخريطة، قائمة سيارات تفاعلية تسحب للأعلى كالـ Bottom Sheet، شريط تصفح سفلي ذكي بدون أي تداخل نصوص!"
           files: TOP-GPS-Full-System.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
