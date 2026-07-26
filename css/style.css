@@ -1944,4 +1944,105 @@ select.form-control { cursor: pointer; }
   }
 }
 
+/* =========================================================
+   GLOBAL MOBILE PAGE RESPONSIVENESS & ZERO-HORIZONTAL-OVERFLOW
+   Applies to ALL Subpages (reports, account, vehicles, drivers, history, alerts, geofence)
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* 1. Prevent ANY Page Level Horizontal Overflow */
+  html, body {
+    max-width: 100vw !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body {
+    font-size: 13px !important;
+    padding-bottom: 75px !important;
+  }
+
+  /* 2. Container Fits 100% Mobile Width */
+  .app-container, .main-content, .page-content,
+  .rpt-config-wrap, .account-container, .alerts-container,
+  .drivers-container, .vehicles-container, .geofence-container, .history-container {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* 3. Stack Multi-column Forms & Grids into Single Column on Mobile */
+  .grid, .grid-2, .grid-3, .grid-4, .form-row, .form-grid,
+  .rpt-config-body, .account-grid, .settings-grid, .kpi-row,
+  div[style*="display: grid"], div[style*="display:grid"],
+  div[style*="grid-template-columns"] {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  /* 4. Form Labels, Inputs & Buttons Fit 100% Width */
+  input[type="text"], input[type="password"], input[type="email"], input[type="date"], input[type="time"],
+  select, textarea, .form-control, .btn, button {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 13px !important;
+    min-height: 40px !important;
+  }
+
+  /* 5. Scaled Down Headers & Card Titles for Mobile */
+  h1, .page-title, .rpt-config-header-right {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+    flex-wrap: wrap !important;
+  }
+
+  h2, h3, .card-title, .section-title {
+    font-size: 14px !important;
+  }
+
+  h4, h5, label, .form-label {
+    font-size: 12px !important;
+  }
+
+  /* 6. Header Containers & Toolbars Stack Cleanly */
+  .rpt-config-header, .page-header, .header-bar, .card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    width: 100% !important;
+  }
+
+  .rpt-config-header-left, .header-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* 7. Tables Wrap Responsively with Horizontal Scroll inside Table Box Only */
+  .table-responsive, .table-container, .data-table-container, div[style*="overflow-x"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  table {
+    font-size: 11px !important;
+  }
+
+  th, td {
+    padding: 6px 8px !important;
+    white-space: nowrap !important;
+  }
+}
+
+
 
