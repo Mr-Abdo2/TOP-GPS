@@ -7534,109 +7534,22 @@ function populateInfoTable() {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
-    // Retry after a second in case topbar isn't mounted yet
-    setTimeout(() => { injectHamburger(); }, 800);
   }
+
+  // Keep retrying hamburger injection until topbar is rendered
+  const _hamburgerRetry = setInterval(() => {
+    if (document.getElementById('drawer-hamburger')) {
+      clearInterval(_hamburgerRetry);
+    } else {
+      injectHamburger();
+    }
+  }, 500);
+  setTimeout(() => clearInterval(_hamburgerRetry), 10000);
 
 })();
 
-(function initMobileUI() {
-  function injectMobileNav() {
-    if (document.getElementById('mobile-bottom-nav')) return;
 
-    const isInsidePages = window.location.pathname.includes('/pages/');
-    const basePath = isInsidePages ? '' : 'pages/';
-    const rootPath = isInsidePages ? '../index.html' : 'index.html';
-    const currentPath = window.location.pathname;
+// ── End of TOP-GPS App ──
 
-    const navItems = [
-      { name: 'الخريطة', icon: '🗺️', url: rootPath, key: 'index', action: 'showMap' },
-      { name: 'السيارات', icon: '🚗', url: rootPath, key: 'vehicles', action: 'toggleVehicles' },
-      { name: 'التنبيهات', icon: '🔔', url: basePath + 'alerts.html', key: 'alerts' },
-      { name: 'التقارير', icon: '📊', url: basePath + 'reports.html', key: 'reports' },
-      { name: 'حسابي', icon: '👤', url: basePath + 'account.html', key: 'account' }
-    ];
-
-    const nav = document.createElement('nav');
-    nav.id = 'mobile-bottom-nav';
-    nav.className = 'mobile-nav-bar';
-
-    navItems.forEach(item => {
-      const a = document.createElement('a');
-      a.href = item.url;
-      a.className = 'mobile-nav-item';
-      if (
-        (item.key === 'index' && (currentPath.endsWith('index.html') || currentPath.endsWith('/') || currentPath.endsWith('GPS/'))) ||
-        (currentPath.includes(item.key))
-      ) {
-        a.classList.add('active');
-      }
-
-      if (item.action === 'toggleVehicles') {
-        a.onclick = (e) => {
-          const isDashboard = currentPath.endsWith('index.html') || currentPath.endsWith('/') || currentPath.endsWith('GPS/');
-          if (isDashboard) {
-            e.preventDefault();
-            toggleMobilePanel();
-          }
-        };
-      } else if (item.action === 'showMap') {
-        a.onclick = (e) => {
-          const isDashboard = currentPath.endsWith('index.html') || currentPath.endsWith('/') || currentPath.endsWith('GPS/');
-          if (isDashboard) {
-            e.preventDefault();
-            collapseMobilePanel();
-          }
-        };
-      }
-
-      a.innerHTML = `
-        <span class="nav-icon">${item.icon}</span>
-        <span>${item.name}</span>
-      `;
-      nav.appendChild(a);
-    });
-
-    document.body.appendChild(nav);
-  }
-
-  function toggleMobilePanel() {
-    const panel = document.querySelector('.split-panel');
-    if (panel) {
-      panel.classList.toggle('expanded');
-    }
-  }
-
-  function collapseMobilePanel() {
-    const panel = document.querySelector('.split-panel');
-    if (panel) {
-      panel.classList.remove('expanded');
-    }
-  }
-
-  function setupMobileSheetEvents() {
-    const panelTabs = document.querySelector('.split-panel-tabs');
-    if (panelTabs) {
-      panelTabs.onclick = () => toggleMobilePanel();
-    }
-
-    // Collapse sheet when vehicle selected to show map
-    document.addEventListener('vehicleSelected', () => {
-      if (window.innerWidth <= 768) {
-        collapseMobilePanel();
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      injectMobileNav();
-      setTimeout(setupMobileSheetEvents, 1000);
-    });
-  } else {
-    injectMobileNav();
-    setTimeout(setupMobileSheetEvents, 1000);
-  }
-})();
 
 
