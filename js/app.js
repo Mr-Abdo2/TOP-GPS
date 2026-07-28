@@ -7166,8 +7166,380 @@ function populateInfoTable() {
 }
 
 // =========================================================
-//  NATIVE MOBILE APP UI CONTROLLER (TMTGPS / Traccar Style)
+//  DRAWER NAVIGATION — TMT GPS Style
+//  Replaces bottom nav with a professional slide-in drawer
 // =========================================================
+(function initDrawerUI() {
+
+  // ── Inject Drawer CSS ──────────────────────────────────
+  function injectDrawerStyles() {
+    if (document.getElementById('drawer-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'drawer-styles';
+    style.textContent = `
+      /* ── Drawer Overlay ── */
+      #drawer-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 19000;
+        backdrop-filter: blur(2px);
+      }
+      #drawer-overlay.open { display: block; }
+
+      /* ── Side Drawer ── */
+      #side-drawer {
+        position: fixed;
+        top: 0;
+        right: -300px;
+        width: 280px;
+        height: 100vh;
+        background: linear-gradient(180deg, #0f1929 0%, #111827 100%);
+        z-index: 20000;
+        display: flex;
+        flex-direction: column;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: -8px 0 30px rgba(0,0,0,0.5);
+        overflow: hidden;
+      }
+      #side-drawer.open { right: 0; }
+
+      /* ── Drawer Header ── */
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+        flex-shrink: 0;
+      }
+      .drawer-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .drawer-logo-icon {
+        width: 36px; height: 36px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+      }
+      .drawer-logo-text {
+        font-size: 18px;
+        font-weight: 900;
+        color: #fff;
+        font-family: 'Cairo', sans-serif;
+        letter-spacing: 1px;
+      }
+      .drawer-logo-text sup {
+        font-size: 9px;
+        font-weight: 700;
+        color: #10b981;
+        vertical-align: super;
+      }
+      .drawer-close {
+        background: rgba(255,255,255,0.08);
+        border: none;
+        color: #94a3b8;
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+      }
+      .drawer-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+      /* ── Drawer Nav ── */
+      .drawer-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 0;
+      }
+      .drawer-nav::-webkit-scrollbar { width: 4px; }
+      .drawer-nav::-webkit-scrollbar-track { background: transparent; }
+      .drawer-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+      .drawer-section-label {
+        padding: 8px 20px 4px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-family: 'Cairo', sans-serif;
+      }
+
+      .drawer-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: 'Cairo', sans-serif;
+        transition: all 0.2s;
+        border-radius: 0;
+        position: relative;
+        cursor: pointer;
+      }
+      .drawer-nav-item:hover {
+        background: rgba(255,255,255,0.06);
+        color: #e2e8f0;
+      }
+      .drawer-nav-item.active {
+        background: rgba(16,185,129,0.12);
+        color: #10b981;
+      }
+      .drawer-nav-item.active::before {
+        content: '';
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 3px;
+        background: #10b981;
+        border-radius: 3px 0 0 3px;
+      }
+      .drawer-nav-icon {
+        width: 34px; height: 34px;
+        border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+        background: rgba(255,255,255,0.06);
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+      .drawer-nav-item.active .drawer-nav-icon {
+        background: rgba(16,185,129,0.2);
+      }
+      .drawer-nav-name { flex: 1; }
+
+      /* ── Drawer Footer ── */
+      .drawer-footer {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        flex-shrink: 0;
+      }
+      .drawer-support-btn {
+        width: 100%;
+        padding: 11px 16px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: 'Cairo', sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        transition: all 0.2s;
+      }
+      .drawer-support-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+      .drawer-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: rgba(255,255,255,0.04);
+        border-radius: 12px;
+      }
+      .drawer-user-avatar {
+        width: 36px; height: 36px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .drawer-user-email {
+        font-size: 11px;
+        color: #64748b;
+        font-family: 'Cairo', sans-serif;
+      }
+      .drawer-user-version {
+        font-size: 10px;
+        color: #334155;
+        margin-top: 2px;
+        font-family: 'Cairo', sans-serif;
+      }
+
+      /* ── Hamburger Button in Topbar ── */
+      #drawer-hamburger {
+        background: rgba(255,255,255,0.08);
+        border: none;
+        color: #e2e8f0;
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      #drawer-hamburger:hover { background: rgba(255,255,255,0.15); }
+
+      /* ── Hide old bottom nav on mobile ── */
+      @media (max-width: 768px) {
+        .mobile-nav-bar { display: none !important; }
+        body { padding-bottom: 0 !important; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ── Build Nav Items ────────────────────────────────────
+  function getNavItems() {
+    const isInsidePages = window.location.pathname.includes('/pages/');
+    const base = isInsidePages ? '' : 'pages/';
+    const root = isInsidePages ? '../index.html' : 'index.html';
+    const currentPath = window.location.pathname;
+
+    const isActive = (key) => {
+      if (key === 'home') return currentPath.endsWith('index.html') || currentPath.endsWith('/') || currentPath.endsWith('GPS/');
+      return currentPath.includes(key);
+    };
+
+    return [
+      {
+        section: 'الوحدات الرئيسية',
+        items: [
+          { name: 'الرئيسية',     icon: '🏠', url: root,                       key: 'home' },
+          { name: 'الخريطة',      icon: '🗺️', url: root + '#map',              key: 'map'  },
+          { name: 'المركبات',     icon: '🚗', url: base + 'vehicles.html',      key: 'vehicles' },
+          { name: 'السائقون',     icon: '👤', url: base + 'drivers.html',       key: 'drivers' },
+          { name: 'الاحداث',      icon: '🔔', url: base + 'alerts.html',        key: 'alerts' },
+          { name: 'التقارير',     icon: '📊', url: base + 'reports.html',       key: 'reports' },
+        ]
+      },
+      {
+        section: 'الوحدات النشطة',
+        items: [
+          { name: 'الأماكن',      icon: '📍', url: base + 'geofence.html',      key: 'geofence' },
+          { name: 'تاريخ الرحلات', icon: '📅', url: base + 'history.html',      key: 'history' },
+          { name: 'حسابي',        icon: '⚙️', url: base + 'account.html',       key: 'account' },
+        ]
+      }
+    ].map(section => ({
+      ...section,
+      items: section.items.map(item => ({ ...item, active: isActive(item.key) }))
+    }));
+  }
+
+  // ── Inject Drawer HTML ─────────────────────────────────
+  function injectDrawer() {
+    if (document.getElementById('side-drawer')) return;
+
+    // Overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'drawer-overlay';
+    overlay.onclick = closeDrawer;
+    document.body.appendChild(overlay);
+
+    // Drawer
+    const drawer = document.createElement('nav');
+    drawer.id = 'side-drawer';
+    drawer.setAttribute('dir', 'rtl');
+
+    const sections = getNavItems();
+    let navHtml = '';
+    sections.forEach(sec => {
+      navHtml += `<div class="drawer-section-label">${sec.section}</div>`;
+      sec.items.forEach(item => {
+        navHtml += `
+          <a href="${item.url}" class="drawer-nav-item${item.active ? ' active' : ''}">
+            <span class="drawer-nav-icon">${item.icon}</span>
+            <span class="drawer-nav-name">${item.name}</span>
+          </a>
+        `;
+      });
+    });
+
+    drawer.innerHTML = `
+      <div class="drawer-header">
+        <div class="drawer-logo">
+          <div class="drawer-logo-icon">🛰️</div>
+          <div class="drawer-logo-text">TOP<sup>GPS</sup></div>
+        </div>
+        <button class="drawer-close" onclick="window.__closeDrawer && window.__closeDrawer()">✕</button>
+      </div>
+      <div class="drawer-nav">${navHtml}</div>
+      <div class="drawer-footer">
+        <button class="drawer-support-btn">🎧 الدعم والمساعدة</button>
+        <div class="drawer-user-info">
+          <div class="drawer-user-avatar">T</div>
+          <div>
+            <div class="drawer-user-email">topgps@gmail.com</div>
+            <div class="drawer-user-version">v8.0.0 — TOP-GPS</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(drawer);
+  }
+
+  // ── Inject Hamburger Button into Topbar ───────────────
+  function injectHamburger() {
+    if (document.getElementById('drawer-hamburger')) return;
+    const topbar = document.getElementById('topbar') || document.querySelector('.topbar');
+    if (!topbar) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'drawer-hamburger';
+    btn.innerHTML = '☰';
+    btn.title = 'القائمة';
+    btn.onclick = openDrawer;
+
+    // Insert as first child of topbar
+    topbar.insertBefore(btn, topbar.firstChild);
+  }
+
+  // ── Open / Close ──────────────────────────────────────
+  function openDrawer() {
+    document.getElementById('side-drawer')?.classList.add('open');
+    document.getElementById('drawer-overlay')?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    document.getElementById('side-drawer')?.classList.remove('open');
+    document.getElementById('drawer-overlay')?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Expose globally for inline onclick
+  window.__closeDrawer = closeDrawer;
+
+  // Close on Escape key
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  // ── Init ──────────────────────────────────────────────
+  function init() {
+    injectDrawerStyles();
+    injectDrawer();
+    injectHamburger();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+    // Retry after a second in case topbar isn't mounted yet
+    setTimeout(() => { injectHamburger(); }, 800);
+  }
+
+})();
+
 (function initMobileUI() {
   function injectMobileNav() {
     if (document.getElementById('mobile-bottom-nav')) return;
