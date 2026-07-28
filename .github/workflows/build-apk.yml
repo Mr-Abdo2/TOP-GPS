@@ -65,9 +65,9 @@ jobs:
       - name: Create Direct GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v6.0.0
-          name: "📱 TOP-GPS Fixed Reports & Form Scaling v6.0.0"
-          body: "إصلاح جذري لصفحة التقارير وكافة الصفحات — حقول التاريخ واضحة ومكشوفة بالكامل، زر توليد التقرير الأكبر (100% Width) ظاهر بوضوح، مع التصفح العمودي السلس وبدون أي تداخل أزرار أو هيدرات!"
+          tag_name: v7.0.0
+          name: "📱 TOP-GPS Real GPS Fix — Browser Geolocation v7.0.0"
+          body: "إصلاح جذري لظهور موقع التليفون! أصبح التطبيق يستخدم GPS المدمج في الجهاز مباشرةً (Browser Geolocation API) بدون الحاجة لأي سيرفر خارجي — موقعك يظهر فوراً على الخريطة بمجرد فتح التطبيق!"
           files: TOP-GPS-Full-System.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

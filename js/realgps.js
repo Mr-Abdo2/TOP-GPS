@@ -1,18 +1,18 @@
 // =============================================
 //  TOP-GPS — Real GPS Live Integration
-//  Connects to traccar-server WebSocket and
-//  shows your real phone position on the map
+//  Uses Browser Geolocation API (works directly
+//  on the phone — no external server needed!)
 // =============================================
 
 const RealGPS = (() => {
-  let ws = null;
   let realMarkers = {};
-  let reconnectTimer = null;
-  const API_URL = 'http://localhost:5056';
-  const WS_URL  = 'ws://localhost:5056';
+  let watchId = null;
+  let firstFix = true;
+  let findMeAdded = false;
+  let lastLat = null, lastLon = null;
 
   // Phone icon for real device
-  const phoneIcon = (id) => L.divIcon({
+  const phoneIcon = () => L.divIcon({
     className: '',
     iconSize: [48, 48],
     iconAnchor: [24, 24],
@@ -54,7 +54,7 @@ const RealGPS = (() => {
       }
       #real-gps-status {
         position: fixed;
-        bottom: 20px;
+        bottom: 75px;
         left: 50%;
         transform: translateX(-50%);
         background: rgba(16,185,129,0.95);
@@ -70,43 +70,45 @@ const RealGPS = (() => {
         gap: 8px;
         box-shadow: 0 4px 20px rgba(16,185,129,0.4);
         transition: all 0.3s;
+        white-space: nowrap;
       }
       #real-gps-status.disconnected {
         background: rgba(239,68,68,0.95);
         box-shadow: 0 4px 20px rgba(239,68,68,0.4);
       }
+      #real-gps-status.waiting {
+        background: rgba(245,158,11,0.95);
+        box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+      }
     `;
     document.head.appendChild(style);
   }
 
-  function showStatus(msg, connected = true) {
+  function showStatus(msg, type = 'connected') {
     let el = document.getElementById('real-gps-status');
     if (!el) {
       el = document.createElement('div');
       el.id = 'real-gps-status';
       document.body.appendChild(el);
     }
-    el.className = connected ? '' : 'disconnected';
-    el.innerHTML = (connected ? '🟢' : '🔴') + ' ' + msg;
+    el.className = type === 'connected' ? '' : type;
+    const icon = type === 'connected' ? '🟢' : type === 'waiting' ? '🟡' : '🔴';
+    el.innerHTML = icon + ' ' + msg;
   }
 
-  let firstFix = true; // Auto-pan to real location on first GPS fix
-  let findMeAdded = false;
-
-  function addFindMeButton(lat, lon) {
+  function addFindMeButton() {
     if (findMeAdded) return;
     findMeAdded = true;
 
-    // Add "Find Me" button to map controls
     const btn = document.createElement('button');
     btn.id = 'find-me-btn';
     btn.title = 'اذهب لموقعي الحقيقي';
     btn.innerHTML = '📱 موقعي';
     btn.style.cssText = `
       position: fixed;
-      top: 80px;
-      left: 20px;
-      z-index: 9999;
+      top: 70px;
+      left: 16px;
+      z-index: 9998;
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
       border: none;
@@ -119,122 +121,112 @@ const RealGPS = (() => {
       box-shadow: 0 4px 15px rgba(16,185,129,0.5);
       transition: all 0.2s;
     `;
-    btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
-    btn.onmouseleave = () => btn.style.transform = 'scale(1)';
     btn.onclick = () => {
-      const map = MapManager.getMap();
-      if (map) map.flyTo([lat, lon], 16, { animate: true, duration: 1.5 });
+      if (lastLat !== null && lastLon !== null) {
+        const map = MapManager.getMap();
+        if (map) map.flyTo([lastLat, lastLon], 16, { animate: true, duration: 1.5 });
+      }
     };
     document.body.appendChild(btn);
   }
 
-  function updateMarker(pos) {
+  function updateMarker(lat, lon, speed, accuracy) {
     const map = MapManager.getMap();
-    if (!map) { setTimeout(() => updateMarker(pos), 1000); return; }
+    if (!map) { setTimeout(() => updateMarker(lat, lon, speed, accuracy), 1000); return; }
 
-    const { id, lat, lon, speed, batt, accuracy, timestamp } = pos;
+    lastLat = lat;
+    lastLon = lon;
 
-    // Update or create marker
+    const id = 'my-phone';
+    const time = new Date().toLocaleTimeString('ar-SA');
+    const speedKmh = speed ? Math.round(speed * 3.6) : 0;
+    const acc = accuracy ? Math.round(accuracy) : '?';
+
     if (realMarkers[id]) {
       realMarkers[id].setLatLng([lat, lon]);
     } else {
-      realMarkers[id] = L.marker([lat, lon], { icon: phoneIcon(id), zIndexOffset: 9000 });
+      realMarkers[id] = L.marker([lat, lon], { icon: phoneIcon(), zIndexOffset: 9000 });
       realMarkers[id].addTo(map);
     }
 
-    // Bind popup
-    const time = new Date(timestamp).toLocaleTimeString('ar-SA');
     realMarkers[id].bindPopup(`
       <div dir="rtl" style="font-family:Cairo,sans-serif;min-width:200px">
         <div style="font-weight:700;font-size:15px;color:#10b981;margin-bottom:8px">📱 موقعي الحقيقي</div>
-        <div>📍 lat: <b>${lat.toFixed(5)}</b></div>
-        <div>📍 lon: <b>${lon.toFixed(5)}</b></div>
-        <div>🚀 السرعة: <b>${speed} كم/س</b></div>
-        <div>🔋 البطارية: <b>${batt}%</b></div>
-        <div>🎯 الدقة: <b>${accuracy}م</b></div>
+        <div>📍 خط العرض: <b>${lat.toFixed(5)}</b></div>
+        <div>📍 خط الطول: <b>${lon.toFixed(5)}</b></div>
+        <div>🚀 السرعة: <b>${speedKmh} كم/س</b></div>
+        <div>🎯 الدقة: <b>${acc} متر</b></div>
         <div>🕐 آخر تحديث: <b>${time}</b></div>
       </div>
     `);
 
-    // ✅ Auto-pan to real location on FIRST fix
+    // Auto-pan on first fix
     if (firstFix) {
       firstFix = false;
       map.flyTo([lat, lon], 15, { animate: true, duration: 2 });
       console.log(`[RealGPS] 🗺️ Auto-panned to real location: ${lat}, ${lon}`);
     }
 
-    // Add Find Me button
-    addFindMeButton(lat, lon);
-    // Update button onclick with latest coords
-    const btn = document.getElementById('find-me-btn');
-    if (btn) btn.onclick = () => map.flyTo([lat, lon], 16, { animate: true, duration: 1.5 });
-
-    // Update status bar
-    showStatus(`📡 GPS حي: ${lat.toFixed(4)}, ${lon.toFixed(4)} | ${speed} كم/س | 🔋 ${batt}%`);
+    addFindMeButton();
+    showStatus(`📡 موقعي: ${lat.toFixed(4)}, ${lon.toFixed(4)} | ${speedKmh} كم/س | دقة: ${acc}م`);
   }
 
-  function connect() {
-    if (ws && ws.readyState === WebSocket.OPEN) return;
-
-    ws = new WebSocket(WS_URL);
-
-    ws.onopen = () => {
-      console.log('[RealGPS] ✅ WebSocket connected');
-      showStatus('متصل — في انتظار بيانات GPS...', true);
-      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-    };
-
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'position') {
-          updateMarker(msg.data);
-        } else if (msg.type === 'init' && msg.data.length > 0) {
-          msg.data.forEach(pos => updateMarker(pos));
-        }
-      } catch(err) { console.error('[RealGPS] Parse error:', err); }
-    };
-
-    ws.onclose = () => {
-      console.log('[RealGPS] ❌ Disconnected. Reconnecting in 5s...');
-      showStatus('انقطع الاتصال — جاري إعادة الاتصال...', false);
-      reconnectTimer = setTimeout(connect, 5000);
-    };
-
-    ws.onerror = (e) => {
-      console.error('[RealGPS] Error:', e);
-    };
+  function onSuccess(position) {
+    const { latitude, longitude, speed, accuracy } = position.coords;
+    updateMarker(latitude, longitude, speed, accuracy);
   }
 
-  // Fetch existing positions on start
-  async function fetchInitial() {
-    try {
-      const res = await fetch(`${API_URL}/api/positions`);
-      const data = await res.json();
-      data.forEach(pos => updateMarker(pos));
-      if (data.length > 0) {
-        showStatus(`تم تحميل ${data.length} جهاز GPS حقيقي`, true);
-      }
-    } catch(e) {
-      console.log('[RealGPS] No tracking server found at', API_URL);
-    }
+  function onError(err) {
+    let msg = 'تعذّر تحديد الموقع';
+    if (err.code === 1) msg = '❌ تم رفض إذن الموقع — افتح الإعدادات وامنح الإذن';
+    else if (err.code === 2) msg = '❌ GPS غير متاح — تأكد من تفعيله';
+    else if (err.code === 3) msg = '⏱️ انتهى وقت تحديد الموقع — حاول مرة أخرى';
+    console.error('[RealGPS] Error:', err.code, err.message);
+    showStatus(msg, 'disconnected');
   }
 
   function init() {
     injectStyles();
-    fetchInitial();
-    connect();
-    console.log('[RealGPS] 🚀 Real GPS integration started');
+
+    if (!navigator.geolocation) {
+      showStatus('❌ المتصفح لا يدعم GPS', 'disconnected');
+      console.warn('[RealGPS] Geolocation not supported');
+      return;
+    }
+
+    showStatus('🔍 جاري تحديد موقعك...', 'waiting');
+    console.log('[RealGPS] 🚀 Starting Browser Geolocation...');
+
+    // Get first fix immediately
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    });
+
+    // Then watch continuously for live updates every ~5s
+    watchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 5000
+    });
   }
 
-  function panToDevice(id) {
-    const map = window.MapManager && MapManager.getMap ? MapManager.getMap() : null;
-    if (map && realMarkers[id]) {
-      map.flyTo(realMarkers[id].getLatLng(), 16, { animate: true, duration: 1.5 });
+  function stop() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
     }
   }
 
-  return { init, panToDevice };
+  function panToDevice() {
+    if (lastLat !== null && lastLon !== null) {
+      const map = MapManager.getMap();
+      if (map) map.flyTo([lastLat, lastLon], 16, { animate: true, duration: 1.5 });
+    }
+  }
+
+  return { init, stop, panToDevice };
 })();
 
 // Auto-start when DOM is ready
